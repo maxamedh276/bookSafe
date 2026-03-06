@@ -1,0 +1,25 @@
+# Node.js
+backend/node_modules/
+backend/.env
+backend/npm-debug.log*
+backend/yarn-debug.log*
+backend/yarn-error.log*
+
+# Flutter/Dart
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/build/
+frontend/ios/Flutter/Generated.xcconfig
+frontend/ios/Flutter/flutter_export_environment.sh
+frontend/android/key.properties
+frontend/*.jks
+frontend/*.keystore
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

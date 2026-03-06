@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookSafe • Full Technical Documentation</title>
+    <style>
+        /* Professional, clean, print‑ready */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #e6edf2;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .doc {
+            max-width: 1200px;
+            width: 100%;
+            background: white;
+            box-shadow: 0 20px 40px -10px rgba(0,20,30,0.15);
+            border-radius: 24px;
+            padding: 50px 60px;
+        }
+        @media (max-width: 700px) {
+            .doc { padding: 30px 20px; }
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 40px;
+            font-weight: 700;
+            color: #0a2e4b;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+            border-bottom: 5px solid #1e7e6c;
+            padding-bottom: 20px;
+        }
+        .subhead {
+            font-size: 20px;
+            color: #2c5f73;
+            font-weight: 400;
+            margin-bottom: 30px;
+        }
+        h2 {
+            font-size: 30px;
+            font-weight: 600;
+            color: #0e4b5e;
+            margin-top: 50px;
+            margin-bottom: 20px;
+            border-left: 10px solid #289f8c;
+            padding-left: 20px;
+        }
+        h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #166f6b;
+            margin-top: 35px;
+            margin-bottom: 15px;
+        }
+        h4 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a5350;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 16px;
+            color: #1e3b4a;
+            margin-bottom: 18px;
+        }
+        a {
+            color: #1e7e6c;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        ul, ol {
+            margin: 16px 0 24px 30px;
+        }
+        li {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #1e3b4a;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0 32px;
+            font-size: 15px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+        th {
+            background-color: #0a3340;
+            color: white;
+            font-weight: 600;
+            padding: 14px 12px;
+            text-align: left;
+            font-size: 15px;
+        }
+        td {
+            border: 1px solid #ccdfe5;
+            padding: 12px;
+            vertical-align: top;
+            background-color: white;
+        }
+        tr:nth-child(even) td {
+            background-color: #f6fbfc;
+        }
+        code, pre {
+            font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+            background: #eef3f5;
+            border-radius: 8px;
+        }
+        code {
+            padding: 2px 8px;
+            color: #b3414b;
+            font-size: 15px;
+        }
+        pre {
+            background: #0c252e;
+            color: #d4ecea;
+            padding: 20px;
+            overflow-x: auto;
+            border-radius: 16px;
+            margin: 24px 0;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+        .badge {
+            display: inline-block;
+            background: #1e7e6c;
+            color: white;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        .toc {
+            background: #f2f8fa;
+            padding: 25px 35px;
+            border-radius: 20px;
+            margin: 30px 0 20px;
+            columns: 2;
+            column-gap: 40px;
+        }
+        .toc ol {
+            margin: 0;
+            list-style-type: none;
+            counter-reset: toc;
+        }
+        .toc li {
+            counter-increment: toc;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        .toc li:before {
+            content: counters(toc, ".") ". ";
+            font-weight: 700;
+            color: #0e4b5e;
+            margin-right: 6px;
+        }
+        .footer {
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 2px dashed #86b9b0;
+            text-align: center;
+            font-size: 15px;
+            color: #3b5e6b;
+        }
+        .btn-download {
+            background: #0a3340;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 30px;
+            transition: background 0.2s;
+        }
+        .btn-download:hover {
+            background: #154c5c;
+        }
+        @media print {
+            body { background: white; padding: 0; }
+            .doc { box-shadow: none; padding: 20px; }
+            .btn-download { display: none; }
+            .toc { background: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="doc" id="doc-content">
+
+        <!-- Cover / Header -->
+        <span class="badge">Version 1.0 · February 2026</span>
+        <h1>📚 BookSafe ERP System</h1>
+        <div class="subhead">Advanced Technical Documentation — Flutter · Node.js · MySQL</div>
+        <p style="font-size: 17px; color: #14555a; margin-bottom: 10px;"><strong>Author:</strong> [Your Name] &nbsp; | &nbsp; <strong>Stack:</strong> Flutter (App+Web), Node.js, MySQL, JWT, Redis</p>
+        
+        <!-- Download button (self-contained) -->
+        <div style="text-align: right;">
+            <a id="downloadBtn" href="#" class="btn-download" onclick="downloadHTML()">⬇️ Download HTML (Full Doc)</a>
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="toc">
+            <h3 style="margin-top: 0; border-left: none; padding-left: 0; color: #0a2e4b;">📑 Table of Contents</h3>
+            <ol>
+                <li>System Overview</li>
+                <li>System Architecture</li>
+                <li>Database Design (Full Schema)</li>
+                <li>Module-by-Module Breakdown
+                    <ol style="list-style-type: lower-alpha; margin-top: 5px;">
+                        <li>Authentication & Roles</li>
+                        <li>Subscription & Tenant Onboarding</li>
+                        <li>Sales Process (Quick Add)</li>
+                        <li>Debt Management (Two Tabs)</li>
+                        <li>Reports & Analytics</li>
+                        <li>IT Admin Dashboard & Impersonation</li>
+                    </ol>
+                </li>
+                <li>API Endpoints</li>
+                <li>Flutter App Structure</li>
+                <li>Testing Strategy</li>
+                <li>Deployment & CI/CD</li>
+                <li>Security & Performance</li>
+                <li>Additional Recommendations</li>
+            </ol>
+        </div>
+
+        <!-- 1. SYSTEM OVERVIEW -->
+        <h2>1. System Overview</h2>
+        <p><strong>BookSafe</strong> waa nidaam maamul ganacsi (ERP) oo <strong>subscription-based</strong> ah, si gaar ah loogu talagalay in lagu maareeyo:</p>
+        <ul>
+            <li>🛒 <strong>Products & Inventory</strong> – keyd, iib, raadraac</li>
+            <li>👥 <strong>Customers</strong> – diiwaangelin, deyn, taariikh</li>
+            <li>💰 <strong>Sales & Debt</strong> – iibsi degdeg ah, deyn / paid, rasiid</li>
+            <li>📊 <strong>Reports & Analytics</strong> – iib, lacag soo gal, deyn, branch performance</li>
+            <li>🧾 <strong>Multi‑branch & Multi‑tenant</strong> – business kasta wuxuu leeyahay branches, users, permissions</li>
+        </ul>
+        <p><strong>Technologies:</strong> Flutter (Web + Mobile), Node.js (Express), MySQL (Sequelize ORM), JWT, Redis, Riverpod, Hive.</p>
+
+        <!-- 2. ARCHITECTURE -->
+        <h2>2. System Architecture</h2>
+        <pre><code>[Flutter Client (App/Web)]
+        ⇅ (REST API / WebSocket)
+[Node.js + Express] 
+        ⇅ (Sequelize ORM)
+[MySQL Database]  
+        ⇅ (Redis Cache / Session)</code></pre>
+        <h3>2.1 Backend Folder Structure</h3>
+        <pre><code>booksafe-backend/
+├── src/
+│   ├── config/          # DB, env, constants
+│   ├── models/          # Sequelize models (tenant, user, sale, etc.)
+│   ├── controllers/     # Business logic
+│   ├── routes/          # API endpoints
+│   ├── middlewares/     # Auth, RBAC, validation
+│   ├── services/        # Subscription, reports, email, PDF
+│   ├── utils/           # Helpers, logger, formatter
+│   └── app.js
+├── tests/               # Unit & integration (Jest)
+├── .env.example
+└── server.js</code></pre>
+
+        <!-- 3. DATABASE DESIGN (FULL SCHEMA) -->
+        <h2>3. Database Design (MySQL) — Full Schema</h2>
+        <p>Dhamaan <strong>10 core tables</strong> oo leh columns, data types, relationships.</p>
+
+        <h3>👥 Table: <code>tenants</code> (Businesses)</h3>
+        <table>
+            <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT (PK, AI)</td><td></td></tr>
+                <tr><td>business_name</td><td>VARCHAR(100)</td><td></td></tr>
+                <tr><td>owner_name</td><td>VARCHAR(100)</td><td></td></tr>
+                <tr><td>email</td><td>VARCHAR(100)</td><td>Unique</td></tr>
+                <tr><td>phone</td><td>VARCHAR(20)</td><td></td></tr>
+                <tr><td>address</td><td>TEXT</td><td></td></tr>
+                <tr><td>subscription_plan</td><td>ENUM('basic','premium')</td><td>Basic = 1 branch, Premium = unlimited</td></tr>
+                <tr><td>status</td><td>ENUM('pending','active','suspended','blocked')</td><td>Default: pending</td></tr>
+                <tr><td>branch_limit</td><td>INT</td><td>Max branches allowed</td></tr>
+                <tr><td>expiry_date</td><td>DATE</td><td>Subscription end</td></tr>
+                <tr><td>created_at</td><td>TIMESTAMP</td><td>DEFAULT CURRENT_TIMESTAMP</td></tr>
+            </tbody>
+        </table>
+
+        <h3>🏢 Table: <code>branches</code></h3>
+        <table>
+            <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT (PK, AI)</td><td></td></tr>
+                <tr><td>tenant_id</td><td>INT (FK)</td><td>references tenants(id)</td></tr>
+                <tr><td>branch_name</td><td>VARCHAR(100)</td><td></td></tr>
+                <tr><td>location</td><td>VARCHAR(255)</td><td></td></tr>
+                <tr><td>phone</td><td>VARCHAR(20)</td><td></td></tr>
+                <tr><td>created_at</td><td>TIMESTAMP</td><td></td></tr>
+            </tbody>
+        </table>
+
+        <h3>👤 Table: <code>users</code></h3>
+        <table>
+            <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT (PK, AI)</td><td></td></tr>
+                <tr><td>tenant_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>branch_id</td><td>INT (FK)</td><td>NULL for IT Admin</td></tr>
+                <tr><td>full_name</td><td>VARCHAR(100)</td><td></td></tr>
+                <tr><td>email</td><td>VARCHAR(100)</td><td>Unique</td></tr>
+                <tr><td>password</td><td>VARCHAR(255)</td><td>bcrypt hash</td></tr>
+                <tr><td>role</td><td>ENUM('it_admin','tenant_admin','branch_manager','cashier')</td><td>RBAC core</td></tr>
+                <tr><td>status</td><td>ENUM('active','blocked','pending')</td><td></td></tr>
+                <tr><td>created_by</td><td>INT</td><td>references users(id)</td></tr>
+                <tr><td>last_login</td><td>TIMESTAMP</td><td></td></tr>
+                <tr><td>created_at</td><td>TIMESTAMP</td><td></td></tr>
+            </tbody>
+        </table>
+
+        <h3>📦 Table: <code>products</code></h3>
+        <table>
+            <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT (PK, AI)</td><td></td></tr>
+                <tr><td>tenant_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>branch_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>name</td><td>VARCHAR(100)</td><td></td></tr>
+                <tr><td>sku</td><td>VARCHAR(50)</td><td>Unique per tenant</td></tr>
+                <tr><td>price</td><td>DECIMAL(10,2)</td><td></td></tr>
+                <tr><td>stock</td><td>INT</td><td></td></tr>
+                <tr><td>category</td><td>VARCHAR(50)</td><td></td></tr>
+                <tr><td>created_at</td><td>TIMESTAMP</td><td></td></tr>
+            </tbody>
+        </table>
+
+        <h3>👥 Table: <code>customers</code></h3>
+        <table>
+            <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT (PK, AI)</td><td></td></tr>
+                <tr><td>tenant_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>branch_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>name</td><td>VARCHAR(100)</td><td></td></tr>
+                <tr><td>phone</td><td>VARCHAR(20)</td><td></td></tr>
+                <tr><td>email</td><td>VARCHAR(100)</td><td></td></tr>
+                <tr><td>address</td><td>TEXT</td><td></td></tr>
+                <tr><td>debt_balance</td><td>DECIMAL(10,2)</td><td>DEFAULT 0</td></tr>
+                <tr><td>created_at</td><td>TIMESTAMP</td><td></td></tr>
+            </tbody>
+        </table>
+
+        <h3>💰 Table: <code>sales</code></h3>
+        <table>
+            <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT (PK, AI)</td><td></td></tr>
+                <tr><td>tenant_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>branch_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>user_id</td><td>INT (FK)</td><td>who created sale</td></tr>
+                <tr><td>customer_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>total_amount</td><td>DECIMAL(10,2)</td><td></td></tr>
+                <tr><td>paid_amount</td><td>DECIMAL(10,2)</td><td>DEFAULT 0</td></tr>
+                <tr><td>debt_amount</td><td>DECIMAL(10,2)</td><td>total - paid</td></tr>
+                <tr><td>payment_status</td><td>ENUM('paid','credit')</td><td></td></tr>
+                <tr><td>sale_date</td><td>TIMESTAMP</td><td>DEFAULT CURRENT_TIMESTAMP</td></tr>
+                <tr><td>invoice_number</td><td>VARCHAR(50)</td><td>Unique per tenant</td></tr>
+            </tbody>
+        </table>
+
+        <h3>📉 Table: <code>sale_items</code></h3>
+        <table>
+            <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT (PK, AI)</td><td></td></tr>
+                <tr><td>sale_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>product_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>quantity</td><td>INT</td><td></td></tr>
+                <tr><td>price</td><td>DECIMAL(10,2)</td><td>price at sale</td></tr>
+                <tr><td>subtotal</td><td>DECIMAL(10,2)</td><td>quantity * price</td></tr>
+            </tbody>
+        </table>
+
+        <h3>💵 Table: <code>payments</code> (debt collections)</h3>
+        <table>
+            <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT (PK, AI)</td><td></td></tr>
+                <tr><td>tenant_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>branch_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>customer_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>sale_id</td><td>INT (FK)</td><td>nullable (partial payment)</td></tr>
+                <tr><td>amount</td><td>DECIMAL(10,2)</td><td></td></tr>
+                <tr><td>payment_date</td><td>TIMESTAMP</td><td></td></tr>
+                <tr><td>payment_method</td><td>ENUM('cash','card','mobile')</td><td></td></tr>
+            </tbody>
+        </table>
+
+        <h3>📊 Table: <code>audit_logs</code></h3>
+        <table>
+            <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT (PK, AI)</td><td></td></tr>
+                <tr><td>tenant_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>user_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>action</td><td>VARCHAR(50)</td><td>INSERT, UPDATE, DELETE</td></tr>
+                <tr><td>table_name</td><td>VARCHAR(50)</td><td></td></tr>
+                <tr><td>record_id</td><td>INT</td><td></td></tr>
+                <tr><td>old_value</td><td>JSON</td><td></td></tr>
+                <tr><td>new_value</td><td>JSON</td><td></td></tr>
+                <tr><td>timestamp</td><td>TIMESTAMP</td><td>DEFAULT CURRENT_TIMESTAMP</td></tr>
+            </tbody>
+        </table>
+
+        <h3>🧾 Table: <code>subscription_payments</code></h3>
+        <table>
+            <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT (PK, AI)</td><td></td></tr>
+                <tr><td>tenant_id</td><td>INT (FK)</td><td></td></tr>
+                <tr><td>plan</td><td>VARCHAR(50)</td><td>basic / premium</td></tr>
+                <tr><td>amount</td><td>DECIMAL(10,2)</td><td></td></tr>
+                <tr><td>start_date</td><td>DATE</td><td></td></tr>
+                <tr><td>end_date</td><td>DATE</td><td></td></tr>
+                <tr><td>status</td><td>ENUM('paid','pending','failed')</td><td></td></tr>
+                <tr><td>created_at</td><td>TIMESTAMP</td><td></td></tr>
+            </tbody>
+        </table>
+
+        <!-- 4. MODULE BY MODULE (DETAILED) -->
+        <h2>4. Module-by-Module Breakdown</h2>
+
+        <h3>🔐 4.1 Authentication & Role Management</h3>
+        <ul>
+            <li><strong>JWT</strong> (access token + refresh token) – stored securely (httpOnly cookie or mobile secure storage).</li>
+            <li><strong>Middlewares:</strong> 
+                <code>authMiddleware</code> (verifies token), 
+                <code>roleMiddleware(allowedRoles)</code>.
+            </li>
+            <li><strong>4 roles, 4 scopes:</strong></li>
+        </ul>
+        <table>
+            <thead><tr><th>Role</th><th>Scope & Permissions</th></tr></thead>
+            <tbody>
+                <tr><td><code>it_admin</code></td><td>Full system: manage tenants, approve/block, impersonate any tenant dashboard, view all logs.</td></tr>
+                <tr><td><code>tenant_admin</code></td><td>Own tenant: manage branches, users, products, view all reports, subscription.</td></tr>
+                <tr><td><code>branch_manager</code></td><td>Single branch: sales, customers, debt, reports (branch only).</td></tr>
+                <tr><td><code>cashier</code></td><td>Single branch: create sales, add customers/products on‑fly, view debtors (no reports).</td></tr>
+            </tbody>
+        </table>
+
+        <h3>🧾 4.2 Subscription & Tenant Onboarding (Kiro System)</h3>
+        <ol>
+            <li><strong>Landing page (public)</strong> – shows pricing plans (Basic: 1 branch, Premium: unlimited branches).</li>
+            <li><strong>Registration form</strong> – business name, owner, email, phone, address, selected plan, number of branches (based on plan).</li>
+            <li>New tenant inserted with <code>status = 'pending'</code>.</li>
+            <li>IT Admin receives notification (in‑app + email).</li>
+            <li>IT Admin reviews → clicks <strong>Approve</strong> → status becomes <code>active</code>, subscription start/end dates set.</li>
+            <li>Tenant Admin receives login credentials, sets password, creates branches & users.</li>
+            <li><strong>Cron job</strong> (daily) checks <code>expiry_date</code> → if expired → status = <code>suspended</code>.</li>
+            <li>Payment integration (planned): via eDahab, Zaad, or card – recorded in <code>subscription_payments</code>.</li>
+        </ol>
+
+        <h3>🛒 4.3 Sales Process – Smart & Fast (Zero friction)</h3>
+        <p><strong>UI/UX flow (App/Web):</strong></p>
+        <ul>
+            <li>Cashier opens <strong>New Sale</strong> screen.</li>
+            <li><strong>Customer section:</strong> 
+                <ul>
+                    <li>Searchable dropdown with existing customers (by name/phone).</li>
+                    <li>If not found → <strong>“+ Add new customer”</strong> opens quick modal (name, phone, optional) – saves instantly and selects.</li>
+                </ul>
+            </li>
+            <li><strong>Product section:</strong>
+                <ul>
+                    <li>Search products by name or SKU.</li>
+                    <li>If not exists → <strong>“+ Add new product”</strong> modal (name, price, stock, category) – adds and continues.</li>
+                </ul>
+            </li>
+            <li><strong>Payment selection:</strong> toggle between <code>Paid</code> (lacag bixiyey) iyo <code>Credit</code> (deyn).</li>
+            <li>If Credit → debt_amount = total - paid (paid may be partial). Customer debt_balance increased.</li>
+            <li><strong>Invoice:</strong> auto‑generated, printable (thermal printer via Bluetooth).</li>
+        </ul>
+        <p><strong>Backend logic (transaction):</strong></p>
+        <pre><code>BEGIN;
+  INSERT INTO sales (...);
+  INSERT INTO sale_items (...);
+  UPDATE products SET stock = stock - quantity WHERE id = ...;
+  IF payment_status = 'credit' THEN
+    UPDATE customers SET debt_balance = debt_balance + debt_amount WHERE id = ...;
+  END IF;
+COMMIT;</code></pre>
+
+        <h3>📉 4.4 Debt Management – Labo Tab</h3>
+        <p><strong>Tab 1: Deyn (Debtors)</strong></p>
+        <ul>
+            <li>Shows all customers with <code>debt_balance > 0</code>.</li>
+            <li><strong>Search field:</strong> filter by name/phone.</li>
+            <li><strong>Date filtering:</strong> by last sale date.</li>
+            <li>Click on customer → opens debt detail page:
+                <ul>
+                    <li>List of credit sales (date, invoice, amount, paid, remaining).</li>
+                    <li>Payment history.</li>
+                    <li>Button <strong>“Record Payment”</strong> – enter amount, update debt_balance, insert into <code>payments</code>.</li>
+                </ul>
+            </li>
+        </ul>
+        <p><strong>Tab 2: La Bixiyey (Paid Sales)</strong></p>
+        <ul>
+            <li>List of sales with <code>payment_status = 'paid'</code>.</li>
+            <li>Same search (customer) and date filters.</li>
+        </ul>
+
+        <h3>📊 4.5 Reports & Analytics</h3>
+        <ul>
+            <li><strong>Sales report:</strong> total sales, paid, credit – daily, weekly, monthly, custom range.</li>
+            <li><strong>Product report:</strong> best selling products, low stock alert.</li>
+            <li><strong>Payment report:</strong> total cash received, credit given, collection efficiency.</li>
+            <li><strong>Branch performance:</strong> compare revenue per branch (tenant admin).</li>
+            <li><strong>Export:</strong> PDF, Excel (CSV).</li>
+            <li><strong>Visibility:</strong> IT Admin → all tenants; Tenant Admin → own tenant; Branch Manager → own branch only.</li>
+        </ul>
+
+        <h3>🧑‍💻 4.6 IT Admin Dashboard – Tenant Management & Impersonation</h3>
+        <ul>
+            <li>List all tenants with <strong>status badges</strong> (pending, active, suspended, blocked).</li>
+            <li><strong>Quick actions:</strong> Approve, Suspend, Block, Activate, Extend subscription.</li>
+            <li><strong>Click on tenant row</strong> → “View Dashboard” (impersonation). 
+                <ul>
+                    <li>IT Admin views the <strong>exact dashboard</strong> that the tenant admin sees (sales, products, reports, branches).</li>
+                    <li>Clearly labelled “You are viewing as [business name]”.</li>
+                    <li>Can switch back to IT panel.</li>
+                </ul>
+            </li>
+            <li>View tenant’s users, branches, subscription expiry.</li>
+        </ul>
+
+        <!-- 5. API ENDPOINTS -->
+        <h2>5. API Endpoints (Core)</h2>
+        <table>
+            <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Access</th></tr></thead>
+            <tbody>
+                <tr><td>POST</td><td>/api/auth/login</td><td>User login → JWT</td><td>Public</td></tr>
+                <tr><td>POST</td><td>/api/auth/register-tenant</td><td>New tenant registration</td><td>Public</td></tr>
+                <tr><td>GET</td><td>/api/tenants</td><td>List all tenants (with filters)</td><td>IT Admin</td></tr>
+                <tr><td>PUT</td><td>/api/tenants/:id/status</td><td>Update tenant status</td><td>IT Admin</td></tr>
+                <tr><td>GET</td><td>/api/tenants/:id/dashboard</td><td>Impersonate tenant dashboard</td><td>IT Admin</td></tr>
+                <tr><td>POST</td><td>/api/sales</td><td>Create new sale</td><td>Cashier, Manager</td></tr>
+                <tr><td>GET</td><td>/api/customers/debtors</td><td>List customers with debt > 0</td><td>All</td></tr>
+                <tr><td>POST</td><td>/api/payments</td><td>Record debt payment</td><td>Cashier, Manager</td></tr>
+                <tr><td>GET</td><td>/api/reports/sales</td><td>Sales report (date range, branch)</td><td>Admin, Manager</td></tr>
+                <tr><td>GET</td><td>/api/reports/products</td><td>Product performance</td><td>Admin, Manager</td></tr>
+                <tr><td>GET</td><td>/api/branches</td><td>List branches (tenant context)</td><td>Tenant Admin, Manager</td></tr>
+                <tr><td>POST</td><td>/api/products</td><td>Create product (quick add)</td><td>Cashier, Manager</td></tr>
+                <tr><td>POST</td><td>/api/customers</td><td>Create customer (quick add)</td><td>Cashier, Manager</td></tr>
+            </tbody>
+        </table>
+
+        <!-- 6. FLUTTER APP STRUCTURE -->
+        <h2>6. Flutter App Structure (Web + Mobile)</h2>
+        <pre><code>lib/
+├── core/
+│   ├── constants/       # AppColors, strings, api endpoints
+│   ├── utils/           # Date helpers, formatters, validators
+│   ├── themes/          # Light/dark theme data
+│   └── widgets/         # Reusable buttons, cards, dialogs
+├── data/
+│   ├── models/          # Dart classes (Tenant, User, Sale, etc.)
+│   ├── providers/       # Riverpod providers (state management)
+│   └── services/        # API client (Dio), local storage (Hive)
+├── modules/
+│   ├── auth/            # Login, register, forgot password
+│   ├── tenant/          # Tenant admin dashboard, branches, users
+│   ├── sales/           # New sale, invoice, payment
+│   ├── customers/       # Customer list, add, debt detail
+│   ├── products/        # Inventory, add product, stock
+│   ├── debts/           # Debtors list, payment recording
+│   ├── reports/         # Charts (fl_chart), export
+│   ├── admin/           # IT admin panel (tenants list, impersonate)
+│   └── settings/        # Profile, subscription, logout
+└── main.dart</code></pre>
+        <p><strong>State Management:</strong> Riverpod (or Bloc) <br>
+        <strong>Local Storage:</strong> Hive (offline queue for sales) <br>
+        <strong>Printing:</strong> esc_pos_bluetooth / pdf + printing <br>
+        <strong>Responsive:</strong> Breakpoints, adaptive layouts</p>
+
+        <!-- 7. TESTING STRATEGY -->
+        <h2>7. Testing Strategy</h2>
+        <h3>✅ Unit Testing</h3>
+        <ul>
+            <li><strong>Backend:</strong> Jest – test services, models, utilities.</li>
+            <li><strong>Frontend:</strong> Flutter test – test widgets, providers, state changes.</li>
+        </ul>
+        <h3>✅ Integration Testing</h3>
+        <ul>
+            <li><strong>API:</strong> Supertest – test endpoints with real test database (Docker).</li>
+            <li><strong>Database transactions:</strong> verify rollback on failure.</li>
+        </ul>
+        <h3>✅ End-to-End Testing</h3>
+        <ul>
+            <li><strong>Patrol</strong> (Flutter) – simulate: tenant registration → IT approval → login → sale (credit) → debt payment → report.</li>
+        </ul>
+        <h3>✅ User Acceptance Testing (UAT)</h3>
+        <ul>
+            <li>Staging environment with sample businesses, cashiers, managers.</li>
+            <li>Collect feedback, prioritize fixes.</li>
+        </ul>
+
+        <!-- 8. DEPLOYMENT & CI/CD -->
+        <h2>8. Deployment & CI/CD</h2>
+        <h3>8.1 Backend (Node.js + MySQL)</h3>
+        <ul>
+            <li><strong>Process:</strong> PM2 or Docker (Node).</li>
+            <li><strong>Database:</strong> Managed MySQL (AWS RDS, DigitalOcean).</li>
+            <li><strong>Reverse proxy:</strong> Nginx + SSL (Let's Encrypt).</li>
+        </ul>
+        <h3>8.2 Frontend (Flutter)</h3>
+        <ul>
+            <li><strong>Web:</strong> <code>flutter build web</code> → deploy to Vercel/Netlify/cPanel.</li>
+            <li><strong>Mobile:</strong> Build APK / IPA → distribute via private link or MDM.</li>
+        </ul>
+        <h3>8.3 CI/CD Pipeline (GitHub Actions)</h3>
+        <pre><code>name: Deploy BookSafe
+on:
+  push:
+    branches: [ main ]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm install && npm test
+  deploy-backend:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to production
+        run: |
+          ssh deploy@server "cd /var/www/booksafe && git pull && npm ci && pm2 restart booksafe"
+  deploy-web:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: subosito/flutter-action@v2
+      - run: flutter build web --release
+      - uses: peaceiris/actions-gh-pages@v3
+        with:
+          publish_dir: ./build/web</code></pre>
+
+        <!-- 9. SECURITY & PERFORMANCE -->
+        <h2>9. Security & Performance</h2>
+        <h3>🔒 Security</h3>
+        <ul>
+            <li><strong>Helmet.js</strong> – secure headers (HSTS, XSS filter).</li>
+            <li><strong>Rate limiting</strong> – express-rate-limit (auth, sales).</li>
+            <li><strong>Input validation</strong> – express-validator.</li>
+            <li><strong>SQL injection</strong> – prevented by Sequelize (parameterized).</li>
+            <li><strong>XSS</strong> – escape output, sanitize HTML.</li>
+            <li><strong>CORS</strong> – restrict to trusted domains.</li>
+        </ul>
+        <h3>⚡ Performance</h3>
+        <ul>
+            <li><strong>Redis</strong> – session store, cache frequent queries (products, customers).</li>
+            <li><strong>Database indexes</strong> – on foreign keys, search fields (name, phone, sku).</li>
+            <li><strong>Pagination</strong> – all list endpoints (limit/offset).</li>
+            <li><strong>Read replicas</strong> – for heavy report queries (future).</li>
+        </ul>
+
+        <!-- 10. ADDITIONAL RECOMMENDATIONS -->
+        <h2>10. Additional Recommendations</h2>
+        <ul>
+            <li>✅ <strong>Audit Trail</strong> – every INSERT/UPDATE/DELETE logged in <code>audit_logs</code>.</li>
+            <li>✅ <strong>Automated Backups</strong> – daily MySQL dump → S3 or local storage.</li>
+            <li>✅ <strong>Monitoring & Error Tracking</strong> – Sentry for backend, Crashlytics for Flutter, Logtail for logs.</li>
+            <li>✅ <strong>Scalability</strong> – horizontal scaling with load balancer (sticky sessions off).</li>
+            <li>✅ <strong>Multi-language</strong> – implement i18n (Somali / English) using Flutter intl.</li>
+            <li>✅ <strong>Offline support</strong> – queue sales when offline, sync when back online (Hive + connectivity).</li>
+            <li>✅ <strong>Receipt printing</strong> – ESC/POS Bluetooth for mobile, PDF for web.</li>
+        </ul>
+
+        <!-- CONCLUSION -->
+        <h2>🎯 Conclusion</h2>
+        <p><strong>BookSafe</strong> waa nidaam casri ah, flexibile, oo si gaar ah loogu talagalay baahiyaha ganacsiyada Soomaaliyeed iyo kuwa caalamiga ah. Dokumentigani wuxuu tilmaamayaa qorshaha farsamo ee <strong>dhameystiran</strong>, laga bilaabo fikradda ilaa geynta, oo ay ka buuxaan tafaasiisha kasta oo lagama maarmaan u ah full‑stack implementation.</p>
+        <p style="font-size: 18px; font-weight: 500; color: #0e4b5e;">🚀 Diyaar u hawlgab! Wuxuu documentation-gani yahay <strong>single source of truth</strong>.</p>
+
+        <!-- Footer -->
+        <div class="footer">
+            <span style="font-size: 18px;">📘 BookSafe ERP — Advanced Documentation</span><br>
+            Generated: February 2026 · Prepared for [Magacaaga] <br>
+            <span style="opacity: 0.7;">PDF ready · Copy & Download allowed</span>
+        </div>
+    </div>
+
+    <script>
+        // Download HTML as file
+        function downloadHTML() {
+            const content = document.getElementById('doc-content').innerHTML;
+            const style = document.querySelector('style').innerHTML;
+            const fullHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookSafe • Full Technical Documentation</title>
+    <style>${style}</style>
+</head>
+<body>
+    <div class="doc">${content}</div>
+</body>
+</html>`;
+            const blob = new Blob([fullHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'booksafe-complete-docs.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
