@@ -8,9 +8,9 @@ class ApiService {
 
   ApiService() : _dio = Dio(BaseOptions(
     // Base URL can be changed based on environment
-    baseUrl: 'http://192.168.100.20:5000/api', 
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
+    baseUrl: 'https://booksafe-2.onrender.com/api', 
+    connectTimeout: const Duration(seconds: 60),
+    receiveTimeout: const Duration(seconds: 60),
   )) {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {

@@ -11,7 +11,8 @@ const startServer = async () => {
     await connectDB();
 
     // Sync Models
-    await sequelize.sync({ alter: true });
+    const syncOptions = process.env.NODE_ENV === 'production' ? {} : { alter: true };
+    await sequelize.sync(syncOptions);
     console.log('✅ Models synchronized...');
 
     app.listen(PORT, () => {

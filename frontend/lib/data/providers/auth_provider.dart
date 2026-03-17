@@ -76,9 +76,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user: userData,
       );
     } catch (e) {
+      print('LOGIN ERROR: $e'); // Added print for debugging
       state = state.copyWith(
         isLoading: false,
-        error: 'Login failed. Please check your credentials.',
+        error: 'Login failed: $e', // Show actual error briefly to debug
       );
     }
   }
