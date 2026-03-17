@@ -20,8 +20,24 @@ class ApiService {
         }
         return handler.next(options);
       },
-      onError: (e, handler) {
-        // Global error handling can be done here
+      onError: (e, handler) async {
+        // Auto-retry once on connection error (Render cold start)
+        final isConnectionError = e.type == DioExceptionType.connectionError ||
+            e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout;
+
+        final alreadyRetried = e.requestOptions.extra['retried'] == true;
+
+        if (isConnectionError && !alreadyRetried) {
+          e.requestOptions.extra['retried'] = true;
+          await Future.delayed(const Duration(seconds: 3));
+          try {
+            final response = await _dio.fetch(e.requestOptions);
+            return handler.resolve(response);
+          } catch (retryError) {
+            return handler.next(e);
+          }
+        }
         return handler.next(e);
       },
     ));
