@@ -523,11 +523,11 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                                 children: [
                                   IconButton(
                                       icon: const Icon(Icons.edit_outlined),
-                                      onPressed: () {}),
+                                      onPressed: () => _showEditProductDialog(product)),
                                   IconButton(
                                       icon: const Icon(Icons.delete_outline,
                                           color: AppColors.error),
-                                      onPressed: () {}),
+                                      onPressed: () => _deleteProduct(product)),
                                 ],
                               )),
                             ],

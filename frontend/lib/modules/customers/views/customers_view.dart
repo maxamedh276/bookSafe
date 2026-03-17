@@ -481,10 +481,15 @@ class _CustomersViewState extends ConsumerState<CustomersView> {
                               DataCell(Row(
                                 children: [
                                   IconButton(
-                                      icon: const Icon(Icons.edit_outlined), onPressed: () {}),
+                                      icon: const Icon(Icons.edit_outlined),
+                                      onPressed: () => _showEditCustomerDialog(customer)),
                                   IconButton(
                                       icon: const Icon(Icons.history),
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Purchase history coming soon in detailed view!'))
+                                        );
+                                      },
                                       tooltip: 'Purchase History'),
                                 ],
                               )),

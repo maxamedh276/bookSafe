@@ -30,168 +30,104 @@ class HomeView extends ConsumerWidget {
             builder: (context, constraints) {
               final isDesktop = constraints.maxWidth > 800;
               if (isDesktop) {
-                final content = todaySummaryAsync.when(
-                  data: (summary) => [
-                    _buildSummaryCard(
-                      context,
-                      title: 'Iibka Maanta',
-                      value: '\$${summary.totalSales.toStringAsFixed(2)}',
-                      icon: Icons.shopping_cart_outlined,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildSummaryCard(
-                      context,
-                      title: 'Deynta Maanta',
-                      value: '\$${summary.totalDebt.toStringAsFixed(2)}',
-                      icon: Icons.account_balance_wallet_outlined,
-                      color: AppColors.warning,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildSummaryCard(
-                      context,
-                      title: 'Macaamiisha',
-                      value: '—',
-                      icon: Icons.people_outline,
-                      color: AppColors.info,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildSummaryCard(
-                      context,
-                      title: 'Alaabta Dhammadka ah',
-                      value: '—',
-                      icon: Icons.inventory_2_outlined,
-                      color: AppColors.error,
-                    ),
-                  ],
-                  loading: () => [
-                    _buildSummaryCard(
-                      context,
-                      title: 'Iibka Maanta',
-                      value: '…',
-                      icon: Icons.shopping_cart_outlined,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildSummaryCard(
-                      context,
-                      title: 'Deynta Maanta',
-                      value: '…',
-                      icon: Icons.account_balance_wallet_outlined,
-                      color: AppColors.warning,
-                    ),
-                  ],
-                  error: (e, _) => [
-                    _buildSummaryCard(
-                      context,
-                      title: 'Iibka Maanta',
-                      value: 'Error',
-                      icon: Icons.shopping_cart_outlined,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildSummaryCard(
-                      context,
-                      title: 'Deynta Maanta',
-                      value: 'Error',
-                      icon: Icons.account_balance_wallet_outlined,
-                      color: AppColors.warning,
-                    ),
-                  ],
-                );
-
-                return Row(
-                  children: content,
+                return todaySummaryAsync.when(
+                  data: (summary) => Row(
+                    children: [
+                      _buildSummaryCard(
+                        context,
+                        title: 'Iibka Maanta',
+                        value: '\$${summary.totalSales.toStringAsFixed(2)}',
+                        icon: Icons.shopping_cart_outlined,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 16),
+                      _buildSummaryCard(
+                        context,
+                        title: 'Deynta Maanta',
+                        value: '\$${summary.totalDebt.toStringAsFixed(2)}',
+                        icon: Icons.account_balance_wallet_outlined,
+                        color: AppColors.warning,
+                      ),
+                      const SizedBox(width: 16),
+                      _buildSummaryCard(
+                        context,
+                        title: 'Macaamiisha',
+                        value: '${summary.totalCustomers}',
+                        icon: Icons.people_outline,
+                        color: AppColors.info,
+                      ),
+                      const SizedBox(width: 16),
+                      _buildSummaryCard(
+                        context,
+                        title: 'Stock Hooseeya',
+                        value: '${summary.lowStockCount}',
+                        icon: Icons.inventory_2_outlined,
+                        color: AppColors.error,
+                      ),
+                    ],
+                  ),
+                  loading: () => Row(
+                    children: List.generate(4, (i) => Expanded(
+                      child: Container(
+                        margin: EdgeInsets.only(right: i < 3 ? 16 : 0),
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      ),
+                    )),
+                  ),
+                  error: (e, _) => Center(child: Text('Summary Error: $e')),
                 );
               } else {
-                final content = todaySummaryAsync.when(
-                  data: (summary) => [
-                    Row(
-                      children: [
-                        _buildSummaryCard(
-                          context,
-                          title: 'Iibka Maanta',
-                          value: '\$${summary.totalSales.toStringAsFixed(2)}',
-                          icon: Icons.shopping_cart_outlined,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 16),
-                        _buildSummaryCard(
-                          context,
-                          title: 'Deynta Maanta',
-                          value: '\$${summary.totalDebt.toStringAsFixed(2)}',
-                          icon: Icons.account_balance_wallet_outlined,
-                          color: AppColors.warning,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        _buildSummaryCard(
-                          context,
-                          title: 'Macaamiisha',
-                          value: '—',
-                          icon: Icons.people_outline,
-                          color: AppColors.info,
-                        ),
-                        const SizedBox(width: 16),
-                        _buildSummaryCard(
-                          context,
-                          title: 'Alaabta Dhammadka ah',
-                          value: '—',
-                          icon: Icons.inventory_2_outlined,
-                          color: AppColors.error,
-                        ),
-                      ],
-                    ),
-                  ],
-                  loading: () => [
-                    Row(
-                      children: [
-                        _buildSummaryCard(
-                          context,
-                          title: 'Iibka Maanta',
-                          value: '…',
-                          icon: Icons.shopping_cart_outlined,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 16),
-                        _buildSummaryCard(
-                          context,
-                          title: 'Deynta Maanta',
-                          value: '…',
-                          icon: Icons.account_balance_wallet_outlined,
-                          color: AppColors.warning,
-                        ),
-                      ],
-                    ),
-                  ],
-                  error: (e, _) => [
-                    Row(
-                      children: [
-                        _buildSummaryCard(
-                          context,
-                          title: 'Iibka Maanta',
-                          value: 'Error',
-                          icon: Icons.shopping_cart_outlined,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 16),
-                        _buildSummaryCard(
-                          context,
-                          title: 'Deynta Maanta',
-                          value: 'Error',
-                          icon: Icons.account_balance_wallet_outlined,
-                          color: AppColors.warning,
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-
-                return Column(
-                  children: content,
+                return todaySummaryAsync.when(
+                  data: (summary) => Column(
+                    children: [
+                      Row(
+                        children: [
+                          _buildSummaryCard(
+                            context,
+                            title: 'Iibka Maanta',
+                            value: '\$${summary.totalSales.toStringAsFixed(2)}',
+                            icon: Icons.shopping_cart_outlined,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 16),
+                          _buildSummaryCard(
+                            context,
+                            title: 'Deynta Maanta',
+                            value: '\$${summary.totalDebt.toStringAsFixed(2)}',
+                            icon: Icons.account_balance_wallet_outlined,
+                            color: AppColors.warning,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          _buildSummaryCard(
+                            context,
+                            title: 'Macaamiisha',
+                            value: '${summary.totalCustomers}',
+                            icon: Icons.people_outline,
+                            color: AppColors.info,
+                          ),
+                          const SizedBox(width: 16),
+                          _buildSummaryCard(
+                            context,
+                            title: 'Stock Hooseeya',
+                            value: '${summary.lowStockCount}',
+                            icon: Icons.inventory_2_outlined,
+                            color: AppColors.error,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
+                  error: (e, _) => Text('Error: $e'),
                 );
               }
             },

@@ -6,10 +6,14 @@ import '../models/customer_model.dart';
 class TodaySummary {
   final double totalSales;
   final double totalDebt;
+  final int totalCustomers;
+  final int lowStockCount;
 
   const TodaySummary({
     required this.totalSales,
     required this.totalDebt,
+    this.totalCustomers = 0,
+    this.lowStockCount = 0,
   });
 }
 
@@ -17,6 +21,7 @@ class TodaySummary {
 final todaySummaryProvider = FutureProvider<TodaySummary>((ref) async {
   final api = ref.watch(apiServiceProvider);
 
+  // Default to today for summary cards
   final now = DateTime.now();
   final start = DateTime(now.year, now.month, now.day);
   final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
@@ -32,8 +37,15 @@ final todaySummaryProvider = FutureProvider<TodaySummary>((ref) async {
   final data = response.data as Map<String, dynamic>;
   final totalSales = double.tryParse(data['totalSales']?.toString() ?? '0') ?? 0;
   final totalDebt = double.tryParse(data['totalDebt']?.toString() ?? '0') ?? 0;
+  final totalCustomers = int.tryParse(data['totalCustomers']?.toString() ?? '0') ?? 0;
+  final lowStockCount = int.tryParse(data['lowStockCount']?.toString() ?? '0') ?? 0;
 
-  return TodaySummary(totalSales: totalSales, totalDebt: totalDebt);
+  return TodaySummary(
+    totalSales: totalSales, 
+    totalDebt: totalDebt,
+    totalCustomers: totalCustomers,
+    lowStockCount: lowStockCount,
+  );
 });
 
 /// Recent sales for dashboard (limited to latest 5)
