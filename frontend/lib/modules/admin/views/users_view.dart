@@ -171,30 +171,36 @@ class _UsersViewState extends ConsumerState<UsersView> {
             ),
             const SizedBox(height: 24),
             Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
-                  ],
-                ),
-                child: DataTable(
-                  columns: const [
-                    DataColumn(label: Text('Full Name')),
-                    DataColumn(label: Text('Email')),
-                    DataColumn(label: Text('Role')),
-                    DataColumn(label: Text('Status')),
-                  ],
-                  rows: _users.map((user) => DataRow(
-                    cells: [
-                      DataCell(Text(user['full_name'] ?? 'N/A')),
-                      DataCell(Text(user['email'] ?? 'N/A')),
-                      DataCell(Text(user['role']?.toString().replaceAll('_', ' ').toUpperCase() ?? 'N/A')),
-                      DataCell(Text(user['status'] ?? 'N/A')),
-                    ],
-                  )).toList(),
+              child: RefreshIndicator(
+                onRefresh: _loadData,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+                      ],
+                    ),
+                    child: DataTable(
+                      columns: const [
+                        DataColumn(label: Text('Full Name')),
+                        DataColumn(label: Text('Email')),
+                        DataColumn(label: Text('Role')),
+                        DataColumn(label: Text('Status')),
+                      ],
+                      rows: _users.map((user) => DataRow(
+                        cells: [
+                          DataCell(Text(user['full_name'] ?? 'N/A')),
+                          DataCell(Text(user['email'] ?? 'N/A')),
+                          DataCell(Text(user['role']?.toString().replaceAll('_', ' ').toUpperCase() ?? 'N/A')),
+                          DataCell(Text(user['status'] ?? 'N/A')),
+                        ],
+                      )).toList(),
+                    ),
+                  ),
                 ),
               ),
             ),

@@ -51,6 +51,10 @@ const Sale = sequelize.define('Sale', {
         type: DataTypes.STRING(50),
         allowNull: false,
     },
+    total_quantity: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+    },
     sale_date: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,

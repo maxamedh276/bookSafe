@@ -250,62 +250,69 @@ class _CustomersViewState extends ConsumerState<CustomersView> {
                         ),
                       );
                     }
-                    return ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final customer = filtered[index];
-                        final hasDebt = customer.debtBalance > 0;
-                        return ListTile(
-                          tileColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: BorderSide(color: Colors.grey.withOpacity(0.1)),
-                          ),
-                          title: Text(
-                            customer.name,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Text(
-                            '${customer.phone ?? '-'} • ${customer.email ?? '-'}',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          trailing: PopupMenuButton<String>(
-                            onSelected: (value) async {
-                              if (value == 'edit') {
-                                _showEditCustomerDialog(customer);
-                              } else if (value == 'delete') {
-                                await _deleteCustomer(customer);
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Text('Edit'),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Text('Delete'),
-                              ),
-                            ],
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  '\$${customer.debtBalance.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                    color: hasDebt ? AppColors.error : AppColors.textBody,
-                                    fontWeight: hasDebt ? FontWeight.bold : FontWeight.normal,
-                                  ),
-                                ),
-                                const Icon(Icons.more_vert, size: 16),
-                              ],
-                            ),
-                          ),
-                        );
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        ref.invalidate(customersProvider);
+                        await ref.read(customersProvider.future);
                       },
+                      child: ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final customer = filtered[index];
+                          final hasDebt = customer.debtBalance > 0;
+                          return ListTile(
+                            tileColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
+                            ),
+                            title: Text(
+                              customer.name,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: Text(
+                              '${customer.phone ?? '-'} • ${customer.email ?? '-'}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            trailing: PopupMenuButton<String>(
+                              onSelected: (value) async {
+                                if (value == 'edit') {
+                                  _showEditCustomerDialog(customer);
+                                } else if (value == 'delete') {
+                                  await _deleteCustomer(customer);
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text('Edit'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text('Delete'),
+                                ),
+                              ],
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '\$${customer.debtBalance.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      color: hasDebt ? AppColors.error : AppColors.textBody,
+                                      fontWeight: hasDebt ? FontWeight.bold : FontWeight.normal,
+                                    ),
+                                  ),
+                                  const Icon(Icons.more_vert, size: 16),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
@@ -401,101 +408,124 @@ class _CustomersViewState extends ConsumerState<CustomersView> {
                         (c.phone?.contains(searchQuery) ?? false)).toList();
 
                     if (isMobileScreen) {
-                      if (customers.isEmpty) {
-                        return const Center(
-                          child: Text('Macaamiil lama diiwaan gelin weli.'),
-                        );
-                      }
                       if (filtered.isEmpty) {
-                        return const Center(
-                          child: Text('Ma jiro macmiil ku habboon raadinta.'),
-                        );
-                      }
-                      return ListView.separated(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: filtered.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final customer = filtered[index];
-                          final hasDebt = customer.debtBalance > 0;
-                          return ListTile(
-                            title: Text(customer.name,
-                                style: const TextStyle(fontWeight: FontWeight.w600)),
-                            subtitle: Text(
-                              '${customer.phone ?? '-'} • ${customer.email ?? '-'}',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            trailing: Text(
-                              '\$${customer.debtBalance.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                color: hasDebt ? AppColors.error : AppColors.textBody,
-                                fontWeight: hasDebt ? FontWeight.bold : FontWeight.normal,
+                        return RefreshIndicator(
+                          onRefresh: () async {
+                            ref.invalidate(customersProvider);
+                            await ref.read(customersProvider.future);
+                          },
+                          child: SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            child: SizedBox(
+                              height: 400,
+                              child: Center(
+                                child: Text(customers.isEmpty
+                                    ? 'Macaamiil lama diiwaan gelin weli.'
+                                    : 'Ma jiro macmiil ku habboon raadinta.'),
                               ),
                             ),
-                          );
+                          ),
+                        );
+                      }
+                      return RefreshIndicator(
+                        onRefresh: () async {
+                          ref.invalidate(customersProvider);
+                          await ref.read(customersProvider.future);
                         },
+                        child: ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(12),
+                          itemCount: filtered.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final customer = filtered[index];
+                            final hasDebt = customer.debtBalance > 0;
+                            return ListTile(
+                              title: Text(customer.name,
+                                  style: const TextStyle(fontWeight: FontWeight.w600)),
+                              subtitle: Text(
+                                '${customer.phone ?? '-'} • ${customer.email ?? '-'}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              trailing: Text(
+                                '\$${customer.debtBalance.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  color: hasDebt ? AppColors.error : AppColors.textBody,
+                                  fontWeight: hasDebt ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       );
                     }
 
                     // Desktop/tablet: DataTable
-                    return SingleChildScrollView(
-                      child: DataTable(
-                        columnSpacing: 24,
-                        headingRowColor: MaterialStateProperty.all(AppColors.background),
-                        columns: const [
-                          DataColumn(
-                              label:
-                                  Text('Name', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(
-                              label:
-                                  Text('Phone', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(
-                              label:
-                                  Text('Email', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(
-                              label: Text('Debt Balance',
-                                  style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(
-                              label:
-                                  Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
-                        ],
-                        rows: filtered.map((customer) {
-                          return DataRow(
-                            cells: [
-                              DataCell(Text(customer.name)),
-                              DataCell(Text(customer.phone ?? '-')),
-                              DataCell(Text(customer.email ?? '-')),
-                              DataCell(
-                                Text(
-                                  '\$${customer.debtBalance.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                    color: customer.debtBalance > 0
-                                        ? AppColors.error
-                                        : AppColors.textBody,
-                                    fontWeight: customer.debtBalance > 0
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        ref.invalidate(customersProvider);
+                        await ref.read(customersProvider.future);
+                      },
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: DataTable(
+                          columnSpacing: 24,
+                          headingRowColor: MaterialStateProperty.all(AppColors.background),
+                          columns: const [
+                            DataColumn(
+                                label:
+                                    Text('Name', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label:
+                                    Text('Phone', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label:
+                                    Text('Email', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label: Text('Debt Balance',
+                                    style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label:
+                                    Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                          ],
+                          rows: filtered.map((customer) {
+                            return DataRow(
+                              cells: [
+                                DataCell(Text(customer.name)),
+                                DataCell(Text(customer.phone ?? '-')),
+                                DataCell(Text(customer.email ?? '-')),
+                                DataCell(
+                                  Text(
+                                    '\$${customer.debtBalance.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      color: customer.debtBalance > 0
+                                          ? AppColors.error
+                                          : AppColors.textBody,
+                                      fontWeight: customer.debtBalance > 0
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              DataCell(Row(
-                                children: [
-                                  IconButton(
-                                      icon: const Icon(Icons.edit_outlined),
-                                      onPressed: () => _showEditCustomerDialog(customer)),
-                                  IconButton(
-                                      icon: const Icon(Icons.history),
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Purchase history coming soon in detailed view!'))
-                                        );
-                                      },
-                                      tooltip: 'Purchase History'),
-                                ],
-                              )),
-                            ],
-                          );
-                        }).toList(),
+                                DataCell(Row(
+                                  children: [
+                                    IconButton(
+                                        icon: const Icon(Icons.edit_outlined),
+                                        onPressed: () => _showEditCustomerDialog(customer)),
+                                    IconButton(
+                                        icon: const Icon(Icons.history),
+                                        onPressed: () {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Purchase history coming soon in detailed view!'))
+                                          );
+                                        },
+                                        tooltip: 'Purchase History'),
+                                  ],
+                                )),
+                              ],
+                            );
+                          }).toList(),
+                        ),
                       ),
                     );
                   },

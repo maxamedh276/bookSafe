@@ -105,31 +105,42 @@ class _SalesViewState extends ConsumerState<SalesView> {
 
                           // No products at all: show "Add product" empty state
                           if (products.isEmpty) {
-                            return Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(32.0),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.inventory_2_outlined, size: 64, color: AppColors.primary),
-                                    const SizedBox(height: 16),
-                                    const Text(
-                                      'Ma jiro wax alaab ah weli.',
-                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            return RefreshIndicator(
+                              onRefresh: () async {
+                                ref.invalidate(productsProvider);
+                                await ref.read(productsProvider.future);
+                              },
+                              child: SingleChildScrollView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                child: Container(
+                                  height: constraints.maxHeight - 100,
+                                  alignment: Alignment.center,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(32.0),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.inventory_2_outlined, size: 64, color: AppColors.primary),
+                                        const SizedBox(height: 16),
+                                        const Text(
+                                          'Ma jiro wax alaab ah weli.',
+                                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        const Text(
+                                          'Ku dar alaabtaada adigoo riixaya “Ku dar Alaab Cusub” si aad u bilowdo iibka.',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(color: Colors.grey),
+                                        ),
+                                        const SizedBox(height: 24),
+                                        ElevatedButton.icon(
+                                          onPressed: () => _showQuickAddProduct(context),
+                                          icon: const Icon(Icons.add),
+                                          label: const Text('Ku dar Alaab Cusub'),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 8),
-                                    const Text(
-                                      'Ku dar alaabtaada adigoo riixaya “Ku dar Alaab Cusub” si aad u bilowdo iibka.',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(color: Colors.grey),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    ElevatedButton.icon(
-                                      onPressed: () => _showQuickAddProduct(context),
-                                      icon: const Icon(Icons.add),
-                                      label: const Text('Ku dar Alaab Cusub'),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             );
@@ -137,46 +148,64 @@ class _SalesViewState extends ConsumerState<SalesView> {
 
                           // Products exist but filter returned nothing
                           if (filtered.isEmpty) {
-                            return Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(32.0),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.search_off_rounded, size: 56, color: AppColors.primary),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      hasSearch ? 'Ma jirto alaab ku habboon raadinta.' : 'Ma jirto alaab la helay.',
-                                      textAlign: TextAlign.center,
+                            return RefreshIndicator(
+                              onRefresh: () async {
+                                ref.invalidate(productsProvider);
+                                await ref.read(productsProvider.future);
+                              },
+                              child: SingleChildScrollView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                child: Container(
+                                  height: constraints.maxHeight - 100,
+                                  alignment: Alignment.center,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(32.0),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.search_off_rounded, size: 56, color: AppColors.primary),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          hasSearch ? 'Ma jirto alaab ku habboon raadinta.' : 'Ma jirto alaab la helay.',
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        if (hasSearch)
+                                          TextButton(
+                                            onPressed: () => setState(() => searchQuery = ''),
+                                            child: const Text('Nadiifi raadinta'),
+                                          ),
+                                        const SizedBox(height: 8),
+                                        TextButton.icon(
+                                          onPressed: () => _showQuickAddProduct(context),
+                                          icon: const Icon(Icons.add),
+                                          label: const Text('Ku dar Alaab Cusub'),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 8),
-                                    if (hasSearch)
-                                      TextButton(
-                                        onPressed: () => setState(() => searchQuery = ''),
-                                        child: const Text('Nadiifi raadinta'),
-                                      ),
-                                    const SizedBox(height: 8),
-                                    TextButton.icon(
-                                      onPressed: () => _showQuickAddProduct(context),
-                                      icon: const Icon(Icons.add),
-                                      label: const Text('Ku dar Alaab Cusub'),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             );
                           }
 
-                          return GridView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: constraints.maxWidth > 1400 ? 4 : (constraints.maxWidth > 1100 ? 3 : 2),
-                              childAspectRatio: 0.8,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
+                          return RefreshIndicator(
+                            onRefresh: () async {
+                              ref.invalidate(productsProvider);
+                              await ref.read(productsProvider.future);
+                            },
+                            child: GridView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: constraints.maxWidth > 1400 ? 4 : (constraints.maxWidth > 1100 ? 3 : 2),
+                                childAspectRatio: 0.8,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                              ),
+                              itemCount: filtered.length,
+                              itemBuilder: (context, index) => _buildProductCard(filtered[index]),
                             ),
-                            itemCount: filtered.length,
-                            itemBuilder: (context, index) => _buildProductCard(filtered[index]),
                           );
                         },
                         loading: () => const Center(child: CircularProgressIndicator()),

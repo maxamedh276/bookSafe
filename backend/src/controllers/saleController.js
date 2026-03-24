@@ -56,6 +56,7 @@ const createSale = async (req, res) => {
             total_amount,
             paid_amount: paid_amount || 0,
             debt_amount,
+            total_quantity: items.reduce((acc, item) => acc + (Number(item.quantity) || 0), 0),
             payment_status,
             invoice_number,
         }, { transaction: t });
@@ -70,9 +71,10 @@ const createSale = async (req, res) => {
                 subtotal: item.quantity * item.price,
             }, { transaction: t });
 
-            // Decrease stock
+            // Decrease stock and increment total_quantity
             const product = await Product.findByPk(item.product_id, { transaction: t });
             product.stock -= item.quantity;
+            product.total_quantity = (product.total_quantity || 0) + item.quantity;
             await product.save({ transaction: t });
         }
 

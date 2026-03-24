@@ -120,36 +120,43 @@ class _DebtsViewState extends ConsumerState<DebtsView> {
           );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          itemCount: debtors.length,
-          itemBuilder: (context, index) {
-            final customer = debtors[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 16),
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(16),
-                leading: CircleAvatar(
-                  backgroundColor: AppColors.error.withOpacity(0.1),
-                  child: const Icon(Icons.person, color: AppColors.error),
-                ),
-                title: Text(customer.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(customer.phone ?? 'No Phone'),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '\$${customer.debtBalance.toStringAsFixed(2)}',
-                      style: const TextStyle(fontSize: 18, color: AppColors.error, fontWeight: FontWeight.bold),
-                    ),
-                    const Text('Deyn Taagan', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                  ],
-                ),
-                onTap: () => _showCustomerDebtDetail(customer),
-              ),
-            );
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(customersProvider);
+            await ref.read(customersProvider.future);
           },
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            itemCount: debtors.length,
+            itemBuilder: (context, index) {
+              final customer = debtors[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(16),
+                  leading: CircleAvatar(
+                    backgroundColor: AppColors.error.withValues(alpha: 0.1),
+                    child: const Icon(Icons.person, color: AppColors.error),
+                  ),
+                  title: Text(customer.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(customer.phone ?? 'No Phone'),
+                  trailing: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '\$${customer.debtBalance.toStringAsFixed(2)}',
+                        style: const TextStyle(fontSize: 18, color: AppColors.error, fontWeight: FontWeight.bold),
+                      ),
+                      const Text('Deyn Taagan', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                    ],
+                  ),
+                  onTap: () => _showCustomerDebtDetail(customer),
+                ),
+              );
+            },
+          ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -185,35 +192,42 @@ class _DebtsViewState extends ConsumerState<DebtsView> {
           );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          itemCount: paidSales.length,
-          itemBuilder: (context, index) {
-            final sale = paidSales[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 16),
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(16),
-                leading: CircleAvatar(
-                  backgroundColor: AppColors.success.withOpacity(0.1),
-                  child: const Icon(Icons.receipt_long, color: AppColors.success),
-                ),
-                title: Text(sale.invoiceNumber, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(sale.customer?.name ?? 'Macaamiil aan la magacaabin'),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '\$${sale.totalAmount.toStringAsFixed(2)}',
-                      style: const TextStyle(fontSize: 18, color: AppColors.success, fontWeight: FontWeight.bold),
-                    ),
-                    Text(DateFormat('dd/MM/yyyy').format(sale.createdAt), style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                  ],
-                ),
-              ),
-            );
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(salesProvider);
+            await ref.read(salesProvider.future);
           },
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            itemCount: paidSales.length,
+            itemBuilder: (context, index) {
+              final sale = paidSales[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(16),
+                  leading: CircleAvatar(
+                    backgroundColor: AppColors.success.withValues(alpha: 0.1),
+                    child: const Icon(Icons.receipt_long, color: AppColors.success),
+                  ),
+                  title: Text(sale.invoiceNumber, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(sale.customer?.name ?? 'Macaamiil aan la magacaabin'),
+                  trailing: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '\$${sale.totalAmount.toStringAsFixed(2)}',
+                        style: const TextStyle(fontSize: 18, color: AppColors.success, fontWeight: FontWeight.bold),
+                      ),
+                      Text(DateFormat('dd/MM/yyyy').format(sale.createdAt), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),

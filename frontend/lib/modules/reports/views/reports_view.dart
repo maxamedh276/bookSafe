@@ -286,10 +286,13 @@ class _ReportsViewState extends ConsumerState<ReportsView>
   // TAB 1: Summary + Bar chart
   // ───────────────────────────────────────────
   Widget _buildSummaryTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Stat Cards
           // Stat Cards - Responsive Grid
@@ -304,13 +307,13 @@ class _ReportsViewState extends ConsumerState<ReportsView>
                 mainAxisSpacing: 16,
                 childAspectRatio: isSmall ? 1.2 : 0.9,
                 children: [
-                  _buildStatCard('Wadarta Iibka', '\$${(_summary?['totalSales'] ?? 0).toStringAsFixed(2)}',
+                  _buildStatCard('Wadarta Iibka', '\$${(_summary?['total_sales'] ?? 0).toStringAsFixed(2)}',
                       Icons.trending_up_rounded, AppColors.primary),
-                  _buildStatCard('La Bixiyey', '\$${(_summary?['totalPaid'] ?? 0).toStringAsFixed(2)}',
+                  _buildStatCard('La Bixiyey', '\$${(_summary?['total_paid'] ?? 0).toStringAsFixed(2)}',
                       Icons.check_circle_outline_rounded, AppColors.success),
-                  _buildStatCard('Deynta', '\$${(_summary?['totalDebt'] ?? 0).toStringAsFixed(2)}',
+                  _buildStatCard('Deynta', '\$${(_summary?['total_debt'] ?? 0).toStringAsFixed(2)}',
                       Icons.warning_amber_rounded, AppColors.error),
-                  _buildStatCard('Iib №', '${_summary?['salesCount'] ?? 0}',
+                  _buildStatCard('Iib №', '${_summary?['sales_count'] ?? 0}',
                       Icons.receipt_long_outlined, const Color(0xFF7C3AED)),
                 ],
               );
@@ -342,51 +345,56 @@ class _ReportsViewState extends ConsumerState<ReportsView>
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ───────────────────────────────────────────
   // TAB 2: Top Products table
   // ───────────────────────────────────────────
   Widget _buildTopProductsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
-        ),
-        child: _topProducts.isEmpty
-            ? const Padding(
-                padding: EdgeInsets.all(40),
-                child: Center(child: Text('Ma jiraan xog weli.', style: TextStyle(color: AppColors.textLight))),
-              )
-            : SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  headingRowColor: WidgetStateProperty.all(AppColors.secondary.withValues(alpha: 0.05)),
-                  columns: const [
-                    DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Alaabta', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Tirada La Iibiyey', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Dakhliga', style: TextStyle(fontWeight: FontWeight.bold))),
-                  ],
-                  rows: _topProducts.asMap().entries.map((entry) {
-                    final i = entry.key;
-                    final p = entry.value;
-                    return DataRow(
-                      cells: [
-                        DataCell(Text('${i + 1}', style: const TextStyle(color: AppColors.textLight))),
-                        DataCell(Text(p['Product']?['name'] ?? 'N/A')),
-                        DataCell(Text('${p['totalQuantity'] ?? 0}')),
-                        DataCell(Text('\$${double.tryParse(p['totalRevenue']?.toString() ?? '0')?.toStringAsFixed(2) ?? '0'}')),
-                      ],
-                    );
-                  }).toList(),
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+          ),
+          child: _topProducts.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(40),
+                  child: Center(child: Text('Ma jiraan xog weli.', style: TextStyle(color: AppColors.textLight))),
+                )
+              : SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    headingRowColor: WidgetStateProperty.all(AppColors.secondary.withValues(alpha: 0.05)),
+                    columns: const [
+                      DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(label: Text('Alaabta', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(label: Text('Tirada La Iibiyey', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(label: Text('Dakhliga', style: TextStyle(fontWeight: FontWeight.bold))),
+                    ],
+                    rows: _topProducts.asMap().entries.map((entry) {
+                      final i = entry.key;
+                      final p = entry.value;
+                      return DataRow(
+                        cells: [
+                          DataCell(Text('${i + 1}', style: const TextStyle(color: AppColors.textLight))),
+                          DataCell(Text(p['Product']?['name'] ?? 'N/A')),
+                          DataCell(Text('${p['total_quantity'] ?? 0}')),
+                          DataCell(Text('\$${double.tryParse(p['total_revenue']?.toString() ?? '0')?.toStringAsFixed(2) ?? '0'}')),
+                        ],
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }
@@ -395,45 +403,49 @@ class _ReportsViewState extends ConsumerState<ReportsView>
   // TAB 3: Top Debtors table
   // ───────────────────────────────────────────
   Widget _buildDebtorsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
-        ),
-        child: _topDebtors.isEmpty
-            ? const Padding(
-                padding: EdgeInsets.all(40),
-                child: Center(child: Text('Waxba deynta lama joogo — waad ku hambalyaysaa!', style: TextStyle(color: AppColors.success))),
-              )
-            : SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  headingRowColor: WidgetStateProperty.all(AppColors.error.withValues(alpha: 0.05)),
-                  columns: const [
-                    DataColumn(label: Text('Magaca', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Telefoon', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Deynta', style: TextStyle(fontWeight: FontWeight.bold))),
-                  ],
-                  rows: _topDebtors.map((d) {
-                    return DataRow(
-                      cells: [
-                        DataCell(Text(d['name'] ?? 'N/A')),
-                        DataCell(Text(d['phone'] ?? '')),
-                        DataCell(
-                          Text(
-                            '\$${double.tryParse(d['debt_balance']?.toString() ?? '0')?.toStringAsFixed(2) ?? '0'}',
-                            style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.bold),
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+          ),
+          child: _topDebtors.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(40),
+                  child: Center(child: Text('Waxba deynta lama joogo — waad ku hambalyaysaa!', style: TextStyle(color: AppColors.success))),
+                )
+              : SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    headingRowColor: WidgetStateProperty.all(AppColors.error.withValues(alpha: 0.05)),
+                    columns: const [
+                      DataColumn(label: Text('Magaca', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(label: Text('Telefoon', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(label: Text('Deynta', style: TextStyle(fontWeight: FontWeight.bold))),
+                    ],
+                    rows: _topDebtors.map((d) {
+                      return DataRow(
+                        cells: [
+                          DataCell(Text(d['name'] ?? 'N/A')),
+                          DataCell(Text(d['phone'] ?? '')),
+                          DataCell(
+                            Text(
+                              '\$${double.tryParse(d['debt_balance']?.toString() ?? '0')?.toStringAsFixed(2) ?? '0'}',
+                              style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.bold),
+                            ),
                           ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
+                        ],
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }
@@ -494,7 +506,7 @@ class _BarChartPainter extends CustomPainter {
     if (data.isEmpty) return;
 
     final maxVal = data.fold<double>(0.0, (max, d) {
-      final v = double.tryParse(d['totalSales']?.toString() ?? '0') ?? 0;
+      final v = double.tryParse(d['total_sales']?.toString() ?? '0') ?? 0;
       return v > max ? v : max;
     });
     if (maxVal == 0) return;
@@ -531,8 +543,8 @@ class _BarChartPainter extends CustomPainter {
     for (int i = 0; i < data.length; i++) {
       final d = data[i];
       final xStart = i * barGroupWidth + barPadding;
-      final totalSales = double.tryParse(d['totalSales']?.toString() ?? '0') ?? 0;
-      final totalPaid = double.tryParse(d['totalPaid']?.toString() ?? '0') ?? 0;
+      final totalSales = double.tryParse(d['total_sales']?.toString() ?? '0') ?? 0;
+      final totalPaid = double.tryParse(d['total_paid']?.toString() ?? '0') ?? 0;
 
       // Total bar
       final totalBarHeight = (totalSales / maxVal) * (size.height - 20);

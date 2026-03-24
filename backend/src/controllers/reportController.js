@@ -15,8 +15,11 @@ const getSalesSummary = async (req, res) => {
     try {
         const whereClause = {
             tenant_id: req.user.tenant_id,
-            branch_id: req.user.branch_id,
         };
+
+        if (req.user.branch_id) {
+            whereClause.branch_id = req.user.branch_id;
+        }
 
         if (startDate && endDate) {
             whereClause.sale_date = {
@@ -31,11 +34,22 @@ const getSalesSummary = async (req, res) => {
         const totalDebt = sales.reduce((acc, sale) => acc + parseFloat(sale.debt_amount), 0);
         const salesCount = sales.length;
 
+        // Additional summary data
+        const totalCustomers = await Customer.count({ where: { tenant_id: req.user.tenant_id } });
+        const lowStockCount = await Product.count({ 
+            where: { 
+                tenant_id: req.user.tenant_id,
+                stock: { [Op.lte]: 5 }
+            } 
+        });
+
         res.json({
-            totalSales,
-            totalPaid,
-            totalDebt,
-            salesCount,
+            total_sales: totalSales,
+            total_paid: totalPaid,
+            total_debt: totalDebt,
+            sales_count: salesCount,
+            total_customers: totalCustomers,
+            low_stock_count: lowStockCount,
             period: { startDate, endDate }
         });
     } catch (error) {
@@ -51,12 +65,12 @@ const getTopProducts = async (req, res) => {
         const topProducts = await SaleItem.findAll({
             attributes: [
                 'product_id',
-                [sequelize.fn('SUM', sequelize.col('quantity')), 'totalQuantity'],
-                [sequelize.fn('SUM', sequelize.col('subtotal')), 'totalRevenue'],
+                [sequelize.fn('SUM', sequelize.col('quantity')), 'total_quantity'],
+                [sequelize.fn('SUM', sequelize.col('subtotal')), 'total_revenue'],
             ],
             include: [{ model: Product, attributes: ['name', 'price'] }],
             group: ['product_id', 'Product.id'],
-            order: [[sequelize.literal('totalQuantity'), 'DESC']],
+            order: [[sequelize.fn('SUM', sequelize.col('quantity')), 'DESC']],
             limit: 10,
         });
 
@@ -100,8 +114,8 @@ const getDailySales = async (req, res) => {
             },
             attributes: [
                 [sequelize.fn('DATE', sequelize.col('sale_date')), 'date'],
-                [sequelize.fn('SUM', sequelize.col('total_amount')), 'totalSales'],
-                [sequelize.fn('SUM', sequelize.col('paid_amount')), 'totalPaid'],
+                [sequelize.fn('SUM', sequelize.col('total_amount')), 'total_sales'],
+                [sequelize.fn('SUM', sequelize.col('paid_amount')), 'total_paid'],
                 [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
             ],
             group: [sequelize.fn('DATE', sequelize.col('sale_date'))],

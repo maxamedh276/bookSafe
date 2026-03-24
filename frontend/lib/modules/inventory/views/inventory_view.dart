@@ -244,72 +244,53 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                         ),
                       );
                     }
-                    return ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final product = filtered[index];
-                        final isLowStock = product.stock <= 5;
-                        return ListTile(
-                          tileColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: BorderSide(color: Colors.grey.withOpacity(0.1)),
-                          ),
-                          title: Text(
-                            product.name,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Text(
-                            'SKU: ${product.sku ?? '-'} • Qiime: \$${product.price} • Stock: ${product.stock}',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          trailing: PopupMenuButton<String>(
-                            onSelected: (value) async {
-                              if (value == 'edit') {
-                                _showEditProductDialog(product);
-                              } else if (value == 'delete') {
-                                await _deleteProduct(product);
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Text('Edit'),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Text('Delete'),
-                              ),
-                            ],
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isLowStock
-                                    ? AppColors.error.withOpacity(0.1)
-                                    : AppColors.success.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    isLowStock ? 'Low' : 'OK',
-                                    style: TextStyle(
-                                      color: isLowStock ? AppColors.error : AppColors.success,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Icon(Icons.more_vert, size: 16),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        ref.invalidate(productsProvider);
+                        await ref.read(productsProvider.future);
                       },
+                      child: ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final p = filtered[index];
+                          final isOutOfStock = p.stock <= 0;
+                          final isLowStock = p.stock > 0 && p.stock <= 5;
+                          return ListTile(
+                            tileColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                            ),
+                            leading: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: AppColors.background,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary, size: 22),
+                            ),
+                            title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                            subtitle: Text('SKU: ${p.sku ?? "-"} • \$${p.price.toStringAsFixed(2)}'),
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text('${p.stock}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: isOutOfStock ? AppColors.error : (isLowStock ? AppColors.warning : AppColors.success),
+                                    )),
+                                const Text('Stock', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                              ],
+                            ),
+                            onTap: () => _showEditProductDialog(p),
+                          );
+                        },
+                      ),
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
@@ -466,73 +447,79 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                     }
 
                     // Desktop/tablet: DataTable
-                    return SingleChildScrollView(
-                      scrollDirection: Axis.vertical,
-                      child: DataTable(
-                        columnSpacing: 24,
-                        headingRowColor: MaterialStateProperty.all(AppColors.background),
-                        columns: const [
-                          DataColumn(
-                              label: Text('Product Name',
-                                  style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(
-                              label:
-                                  Text('SKU', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(
-                              label: Text('Price',
-                                  style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(
-                              label: Text('Stock',
-                                  style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(
-                              label: Text('Status',
-                                  style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(
-                              label: Text('Actions',
-                                  style: TextStyle(fontWeight: FontWeight.bold))),
-                        ],
-                        rows: filtered.map((product) {
-                          final isLowStock = product.stock <= 5;
-                          return DataRow(
-                            cells: [
-                              DataCell(Text(product.name)),
-                              DataCell(Text(product.sku ?? '-')),
-                              DataCell(Text('\$${product.price}')),
-                              DataCell(Text('${product.stock}')),
-                              DataCell(
-                                Container(
-                                  padding:
-                                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: isLowStock
-                                        ? AppColors.error.withOpacity(0.1)
-                                        : AppColors.success.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    isLowStock ? 'Low Stock' : 'In Stock',
-                                    style: TextStyle(
-                                      color: isLowStock ? AppColors.error : AppColors.success,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        ref.invalidate(productsProvider);
+                        await ref.read(productsProvider.future);
+                      },
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: DataTable(
+                          columnSpacing: 24,
+                          headingRowColor: MaterialStateProperty.all(AppColors.background),
+                          columns: const [
+                            DataColumn(
+                                label: Text('Product Name',
+                                    style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label:
+                                    Text('SKU', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label: Text('Price',
+                                    style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label: Text('Stock',
+                                    style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label: Text('Status',
+                                    style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label: Text('Actions',
+                                    style: TextStyle(fontWeight: FontWeight.bold))),
+                          ],
+                          rows: filtered.map((product) {
+                            final isLowStock = product.stock <= 5;
+                            return DataRow(
+                              cells: [
+                                DataCell(Text(product.name)),
+                                DataCell(Text(product.sku ?? '-')),
+                                DataCell(Text('\$${product.price}')),
+                                DataCell(Text('${product.stock}')),
+                                DataCell(
+                                  Container(
+                                    padding:
+                                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: isLowStock
+                                          ? AppColors.error.withOpacity(0.1)
+                                          : AppColors.success.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      isLowStock ? 'Low Stock' : 'In Stock',
+                                      style: TextStyle(
+                                        color: isLowStock ? AppColors.error : AppColors.success,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              DataCell(Row(
-                                children: [
-                                  IconButton(
-                                      icon: const Icon(Icons.edit_outlined),
-                                      onPressed: () => _showEditProductDialog(product)),
-                                  IconButton(
-                                      icon: const Icon(Icons.delete_outline,
-                                          color: AppColors.error),
-                                      onPressed: () => _deleteProduct(product)),
-                                ],
-                              )),
-                            ],
-                          );
-                        }).toList(),
+                                DataCell(Row(
+                                  children: [
+                                    IconButton(
+                                        icon: const Icon(Icons.edit_outlined),
+                                        onPressed: () => _showEditProductDialog(product)),
+                                    IconButton(
+                                        icon: const Icon(Icons.delete_outline,
+                                            color: AppColors.error),
+                                        onPressed: () => _deleteProduct(product)),
+                                  ],
+                                )),
+                              ],
+                            );
+                          }).toList(),
+                        ),
                       ),
                     );
                   },

@@ -12,18 +12,31 @@ class HomeView extends ConsumerWidget {
     final recentSalesAsync = ref.watch(recentSalesProvider);
     final topDebtorsAsync = ref.watch(topDebtorsProvider);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Maanta & Dashboard',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 8),
-          const Text('Guud ahaan xaaladda ganacsigaaga ee maanta.'),
-          const SizedBox(height: 32),
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(todaySummaryProvider);
+        ref.invalidate(recentSalesProvider);
+        ref.invalidate(topDebtorsProvider);
+        // Wait for them to complete for the spinner to disappear nicely
+        await Future.wait([
+          ref.read(todaySummaryProvider.future),
+          ref.read(recentSalesProvider.future),
+          ref.read(topDebtorsProvider.future),
+        ]);
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(), // Important for pull-to-refresh
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Maanta & Dashboard',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 8),
+            const Text('Guud ahaan xaaladda ganacsigaaga ee maanta.'),
+            const SizedBox(height: 32),
           
           // Summary Cards (Today)
           LayoutBuilder(
@@ -395,8 +408,9 @@ class HomeView extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildSummaryCard(
     BuildContext context, {

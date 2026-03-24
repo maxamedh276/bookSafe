@@ -40,6 +40,10 @@ const Product = sequelize.define('Product', {
     category: {
         type: DataTypes.STRING(50),
     },
+    total_quantity: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+    },
 }, {
     tableName: 'products',
     timestamps: true,
