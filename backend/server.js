@@ -10,8 +10,8 @@ const startServer = async () => {
     // Connect to Database
     await connectDB();
 
-    // Sync Models
-    const syncOptions = process.env.NODE_ENV === 'production' ? {} : { alter: true };
+    // Sync Models - Always use alter: true to ensure Render DB stays updated with model changes
+    const syncOptions = { alter: true };
     await sequelize.sync(syncOptions);
     console.log('✅ Models synchronized...');
 
