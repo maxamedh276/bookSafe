@@ -35,10 +35,10 @@ final todaySummaryProvider = FutureProvider<TodaySummary>((ref) async {
   );
 
   final data = response.data as Map<String, dynamic>;
-  final totalSales = double.tryParse(data['totalSales']?.toString() ?? '0') ?? 0;
-  final totalDebt = double.tryParse(data['totalDebt']?.toString() ?? '0') ?? 0;
-  final totalCustomers = int.tryParse(data['totalCustomers']?.toString() ?? '0') ?? 0;
-  final lowStockCount = int.tryParse(data['lowStockCount']?.toString() ?? '0') ?? 0;
+  final totalSales = double.tryParse(data['total_sales']?.toString() ?? '0') ?? 0;
+  final totalDebt = double.tryParse(data['total_debt']?.toString() ?? '0') ?? 0;
+  final totalCustomers = int.tryParse(data['total_customers']?.toString() ?? '0') ?? 0;
+  final lowStockCount = int.tryParse(data['low_stock_count']?.toString() ?? '0') ?? 0;
 
   return TodaySummary(
     totalSales: totalSales, 
