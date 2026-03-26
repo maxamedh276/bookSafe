@@ -1,4 +1,4 @@
-const Product = require('../models/Product');
+const { Product, Unit } = require('../models');
 
 // @desc    Get all products for tenant
 // @route   GET /api/products
@@ -15,6 +15,7 @@ const getProducts = async (req, res) => {
 
         const products = await Product.findAll({
             where,
+            include: [{ model: Unit, as: 'unit', attributes: ['id', 'name', 'short_name'] }],
             order: [['name', 'ASC']],
         });
 
@@ -28,7 +29,7 @@ const getProducts = async (req, res) => {
 // @route   POST /api/products
 // @access  Private (Manager, Cashier)
 const createProduct = async (req, res) => {
-    const { name, sku, price, stock, category } = req.body;
+    const { name, sku, price, stock, category, unit_id } = req.body;
 
     try {
         // Check if SKU exists for this tenant
@@ -48,7 +49,8 @@ const createProduct = async (req, res) => {
             sku,
             price,
             stock,
-            category
+            category,
+            unit_id: unit_id || null
         });
 
         res.status(201).json(product);
@@ -67,16 +69,20 @@ const updateProduct = async (req, res) => {
         });
 
         if (product) {
-            const { name, sku, price, stock, category } = req.body;
+            const { name, sku, price, stock, category, unit_id } = req.body;
 
             product.name = name || product.name;
             product.sku = sku || product.sku;
             product.price = price || product.price;
             product.stock = stock !== undefined ? stock : product.stock;
             product.category = category || product.category;
+            product.unit_id = unit_id !== undefined ? unit_id : product.unit_id;
 
             const updatedProduct = await product.save();
-            res.json(updatedProduct);
+            const productWithUnit = await Product.findByPk(updatedProduct.id, {
+                include: [{ model: Unit, as: 'unit', attributes: ['id', 'name', 'short_name'] }]
+            });
+            res.json(productWithUnit);
         } else {
             res.status(404).json({ message: 'Alaabta lama helin' });
         }

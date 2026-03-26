@@ -10,6 +10,8 @@ import '../../../data/services/api_service.dart';
 import '../../../core/services/receipt_service.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../core/services/offline_sync_service.dart';
+import '../../../data/models/unit_model.dart';
+import '../../../data/providers/unit_provider.dart';
 
 class SalesView extends ConsumerStatefulWidget {
   const SalesView({super.key});
@@ -22,13 +24,16 @@ class _SalesViewState extends ConsumerState<SalesView> {
   String searchQuery = '';
   Customer? selectedCustomer;
   String paymentStatus = 'paid'; // 'paid' or 'credit'
+  double discount = 0.0;
+  final descriptionController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(productsProvider);
     final customersAsync = ref.watch(customersProvider);
     final cart = ref.watch(cartProvider);
-    final totalAmount = cart.fold<double>(0, (sum, item) => sum + item.total);
+    final subtotal = cart.fold<double>(0, (sum, item) => sum + item.total);
+    final totalAmount = (subtotal - discount) > 0 ? (subtotal - discount) : 0.0;
 
     final width = MediaQuery.of(context).size.width;
     final isMobileScreen = width < 800; // Mobile breakpoint
@@ -368,7 +373,43 @@ class _SalesViewState extends ConsumerState<SalesView> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _buildSummaryRow('Warta Guud', '\$${totalAmount.toStringAsFixed(2)}', isPrimary: true),
+                          const SizedBox(height: 16),
+                          _buildSummaryRow('Kudhig (Subtotal)', '\$${subtotal.toStringAsFixed(2)}'),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Diiskaawanka (Discount)', style: TextStyle(fontSize: 14)),
+                              SizedBox(
+                                width: 100,
+                                child: TextField(
+                                  keyboardType: TextInputType.number,
+                                  textAlign: TextAlign.right,
+                                  decoration: const InputDecoration(
+                                    isDense: true,
+                                    prefixText: '\$ ',
+                                    contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                                  ),
+                                  onChanged: (val) {
+                                    setState(() {
+                                      discount = double.tryParse(val) ?? 0.0;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: descriptionController,
+                            decoration: const InputDecoration(
+                              labelText: 'Faahfaahin (opsiyaal ah)',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Divider(),
+                          _buildSummaryRow('Warta Guud (Total)', '\$${totalAmount.toStringAsFixed(2)}', isPrimary: true),
                           const SizedBox(height: 24),
                           ElevatedButton(
                             onPressed: cart.isEmpty ? null : () => _handleCheckout(),
@@ -829,7 +870,8 @@ class _SalesViewState extends ConsumerState<SalesView> {
 
     try {
       final cartItems = ref.read(cartProvider);
-      final totalAmt = ref.read(cartProvider.notifier).totalAmount;
+      final subtotal = ref.read(cartProvider.notifier).totalAmount;
+      final totalAmt = (subtotal - discount) > 0 ? (subtotal - discount) : 0.0;
       final paidAmt = paymentStatus == 'paid' ? totalAmt : 0.0;
       final debtAmt = totalAmt - paidAmt;
 
@@ -842,6 +884,8 @@ class _SalesViewState extends ConsumerState<SalesView> {
           'quantity': item.quantity,
           'price': item.product.price,
         }).toList(),
+        'discount': discount,
+        'description': descriptionController.text,
       };
 
       // Build receipt items regardless of online/offline
@@ -901,6 +945,7 @@ class _SalesViewState extends ConsumerState<SalesView> {
           paymentStatus: paymentStatus,
           items: receiptItems,
           totalAmount: totalAmt,
+          discount: discount,
           paidAmount: paidAmt,
           debtAmount: debtAmt,
           saleDate: DateTime.now(),
@@ -1003,6 +1048,7 @@ class _QuickAddProductDialogState extends ConsumerState<QuickAddProductDialog> {
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
+  int? _selectedUnitId;
   bool _isLoading = false;
   String? _errorMsg;
 
@@ -1039,6 +1085,31 @@ class _QuickAddProductDialogState extends ConsumerState<QuickAddProductDialog> {
               keyboardType: TextInputType.number,
               validator: (v) => v!.isEmpty ? 'Fadlan gali tirada' : null,
             ),
+            const SizedBox(height: 16),
+            Consumer(
+              builder: (context, ref, _) {
+                final unitsAsync = ref.watch(unitsProvider);
+                return unitsAsync.when(
+                  data: (units) => DropdownButtonFormField<int>(
+                    decoration: const InputDecoration(labelText: 'Unugga (Unit)'),
+                    value: _selectedUnitId,
+                    items: [
+                      const DropdownMenuItem<int>(
+                        value: null,
+                        child: Text('Dhib malahan (None)'),
+                      ),
+                      ...units.map((u) => DropdownMenuItem(
+                            value: u.id,
+                            child: Text('${u.name} (${u.shortName})'),
+                          ))
+                    ],
+                    onChanged: (val) => setState(() => _selectedUnitId = val),
+                  ),
+                  loading: () => const CircularProgressIndicator(),
+                  error: (e, s) => Text('Error loading units: $e'),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -1057,6 +1128,7 @@ class _QuickAddProductDialogState extends ConsumerState<QuickAddProductDialog> {
                 'name': _nameController.text,
                 'price': double.parse(_priceController.text),
                 'stock': int.parse(_stockController.text),
+                if (_selectedUnitId != null) 'unit_id': _selectedUnitId,
               });
               if (mounted) Navigator.pop(context, true);
             } catch (e) {

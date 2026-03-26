@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/product_provider.dart';
 import '../../../data/models/product_model.dart';
+import '../../../data/models/unit_model.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/providers/unit_provider.dart';
 
 class InventoryView extends ConsumerStatefulWidget {
   const InventoryView({super.key});
@@ -32,14 +34,18 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
     final priceController = TextEditingController(text: product.price.toString());
     final stockController = TextEditingController(text: product.stock.toString());
 
+    int? selectedUnitId = product.unitId;
+
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Product'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Edit Product'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: nameController,
@@ -59,6 +65,31 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                   decoration: const InputDecoration(labelText: 'Stock'),
                   keyboardType: TextInputType.number,
                 ),
+                const SizedBox(height: 16),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final unitsAsync = ref.watch(unitsProvider);
+                    return unitsAsync.when(
+                      data: (units) => DropdownButtonFormField<int>(
+                        decoration: const InputDecoration(labelText: 'Unugga (Unit)'),
+                        value: selectedUnitId,
+                        items: [
+                          const DropdownMenuItem<int>(
+                            value: null,
+                            child: Text('Dhib malahan (None)'),
+                          ),
+                          ...units.map((u) => DropdownMenuItem(
+                                value: u.id,
+                                child: Text('${u.name} (${u.shortName})'),
+                              ))
+                        ],
+                        onChanged: (val) => setState(() => selectedUnitId = val),
+                      ),
+                      loading: () => const CircularProgressIndicator(),
+                      error: (e, s) => Text('Error loading units: $e'),
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -71,7 +102,9 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
               onPressed: () => Navigator.pop(context, true),
               child: const Text('Save'),
             ),
-          ],
+            ],
+            );
+          }
         );
       },
     );
@@ -84,6 +117,7 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
           'sku': skuController.text,
           'price': double.tryParse(priceController.text) ?? product.price,
           'stock': int.tryParse(stockController.text) ?? product.stock,
+          'unit_id': selectedUnitId,
         });
         ref.invalidate(productsProvider);
         if (mounted) {
@@ -274,7 +308,7 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                               child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary, size: 22),
                             ),
                             title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                            subtitle: Text('SKU: ${p.sku ?? "-"} • \$${p.price.toStringAsFixed(2)}'),
+                            subtitle: Text('SKU: ${p.sku ?? "-"} • \$${p.price.toStringAsFixed(2)}${p.unitName != null ? ' per ${p.unitName}' : ''}'),
                             trailing: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.end,
@@ -421,7 +455,7 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                             title: Text(product.name,
                                 style: const TextStyle(fontWeight: FontWeight.w600)),
                             subtitle: Text(
-                              'SKU: ${product.sku ?? '-'} • Qiime: \$${product.price} • Stock: ${product.stock}',
+                              'SKU: ${product.sku ?? '-'} • Qiime: \$${product.price} • Stock: ${product.stock} ${product.unitName ?? ''}',
                               style: const TextStyle(fontSize: 12),
                             ),
                             trailing: Container(
@@ -468,6 +502,9 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                                 label: Text('Price',
                                     style: TextStyle(fontWeight: FontWeight.bold))),
                             DataColumn(
+                                label: Text('Unit',
+                                    style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(
                                 label: Text('Stock',
                                     style: TextStyle(fontWeight: FontWeight.bold))),
                             DataColumn(
@@ -484,6 +521,7 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                                 DataCell(Text(product.name)),
                                 DataCell(Text(product.sku ?? '-')),
                                 DataCell(Text('\$${product.price}')),
+                                DataCell(Text(product.unitName ?? '-')),
                                 DataCell(Text('${product.stock}')),
                                 DataCell(
                                   Container(
@@ -548,6 +586,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
   final _skuController = TextEditingController();
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
+  int? _selectedUnitId;
   bool _isLoading = false;
 
   void _submit() async {
@@ -560,6 +599,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
           'sku': _skuController.text,
           'price': double.parse(_priceController.text),
           'stock': int.parse(_stockController.text),
+          if (_selectedUnitId != null) 'unit_id': _selectedUnitId,
         });
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -583,8 +623,9 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
         width: 400,
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
                 controller: _nameController,
@@ -617,6 +658,31 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+              Consumer(
+                builder: (context, ref, _) {
+                  final unitsAsync = ref.watch(unitsProvider);
+                  return unitsAsync.when(
+                    data: (units) => DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(labelText: 'Unugga (Unit)'),
+                      value: _selectedUnitId,
+                      items: [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Dhib malahan (None)'),
+                        ),
+                        ...units.map((u) => DropdownMenuItem(
+                              value: u.id,
+                              child: Text('${u.name} (${u.shortName})'),
+                            ))
+                      ],
+                      onChanged: (val) => setState(() => _selectedUnitId = val),
+                    ),
+                    loading: () => const CircularProgressIndicator(),
+                    error: (e, s) => Text('Error loading units: $e'),
+                  );
+                },
               ),
             ],
           ),

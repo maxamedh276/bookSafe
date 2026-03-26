@@ -24,6 +24,7 @@ app.use('/api/customers', require('./routes/customerRoutes'));
 app.use('/api/sales', require('./routes/saleRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
+app.use('/api/units', require('./routes/unitRoutes'));
 
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to BookSafe ERP API' });

@@ -12,6 +12,7 @@ class ReceiptService {
     required String paymentStatus,
     required List<Map<String, dynamic>> items,
     required double totalAmount,
+    this.discount = 0.0,
     required double paidAmount,
     required double debtAmount,
     required DateTime saleDate,
@@ -125,6 +126,14 @@ class ReceiptService {
               pw.Divider(),
 
               // Totals
+              if (discount > 0)
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Diiskaawan (Discount):', style: const pw.TextStyle(fontSize: 10)),
+                    pw.Text('-\$$discount', style: const pw.TextStyle(fontSize: 10)),
+                  ],
+                ),
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [

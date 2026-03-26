@@ -2,6 +2,7 @@ const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/db');
 const Tenant = require('./Tenant');
 const Branch = require('./Branch');
+const Unit = require('./Unit');
 
 const Product = sequelize.define('Product', {
     id: {
@@ -18,6 +19,11 @@ const Product = sequelize.define('Product', {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: { model: Branch, key: 'id' },
+    },
+    unit_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true, // Optional
+        references: { model: 'units', key: 'id' },
     },
     name: {
         type: DataTypes.STRING(100),
@@ -54,10 +60,14 @@ const Product = sequelize.define('Product', {
     ]
 });
 
+// Associations
 Tenant.hasMany(Product, { foreignKey: 'tenant_id' });
 Product.belongsTo(Tenant, { foreignKey: 'tenant_id' });
 
 Branch.hasMany(Product, { foreignKey: 'branch_id' });
 Product.belongsTo(Branch, { foreignKey: 'branch_id' });
+
+Unit.hasMany(Product, { foreignKey: 'unit_id' });
+Product.belongsTo(Unit, { foreignKey: 'unit_id', as: 'unit' });
 
 module.exports = Product;

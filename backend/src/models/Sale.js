@@ -43,6 +43,14 @@ const Sale = sequelize.define('Sale', {
         type: DataTypes.DECIMAL(10, 2),
         defaultValue: 0.00,
     },
+    discount: {
+        type: DataTypes.DECIMAL(10, 2),
+        defaultValue: 0.00,
+    },
+    description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
     payment_status: {
         type: DataTypes.ENUM('paid', 'credit'),
         allowNull: false,

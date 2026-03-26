@@ -8,6 +8,8 @@ const SaleItem = require('./SaleItem');
 const Payment = require('./Payment');
 const AuditLog = require('./AuditLog');
 const SubscriptionPayment = require('./SubscriptionPayment');
+const Unit = require('./Unit');
+
 
 module.exports = {
     Tenant,
@@ -20,4 +22,6 @@ module.exports = {
     Payment,
     AuditLog,
     SubscriptionPayment,
+    Unit,
 };
+

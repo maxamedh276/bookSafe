@@ -12,7 +12,9 @@ const createSale = async (req, res) => {
         customer_id,
         items, // Array of { product_id, quantity, price }
         paid_amount,
-        payment_status
+        payment_status,
+        discount,
+        description
     } = req.body;
 
     const t = await sequelize.transaction();
@@ -44,6 +46,8 @@ const createSale = async (req, res) => {
             total_amount += qty * unitPrice;
         }
 
+        const parsedDiscount = Number(discount) || 0;
+        total_amount = Math.max(0, total_amount - parsedDiscount);
         const debt_amount = payment_status === 'credit' ? total_amount - paid_amount : 0;
         const invoice_number = `INV-${Date.now()}`; // Simple unique invoice number generation
 
@@ -56,6 +60,8 @@ const createSale = async (req, res) => {
             total_amount,
             paid_amount: paid_amount || 0,
             debt_amount,
+            discount: parsedDiscount,
+            description: description || null,
             total_quantity: items.reduce((acc, item) => acc + (Number(item.quantity) || 0), 0),
             payment_status,
             invoice_number,

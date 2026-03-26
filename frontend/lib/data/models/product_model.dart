@@ -6,6 +6,9 @@ class Product {
   final int stock;
   final String? category;
 
+  final int? unitId;
+  final String? unitName;
+
   Product({
     required this.id,
     required this.name,
@@ -13,6 +16,8 @@ class Product {
     required this.price,
     required this.stock,
     this.category,
+    this.unitId,
+    this.unitName,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -23,6 +28,8 @@ class Product {
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
       stock: json['stock'] is int ? json['stock'] : int.tryParse(json['stock']?.toString() ?? '0') ?? 0,
       category: json['category']?.toString(),
+      unitId: json['unit_id'] is int ? json['unit_id'] : int.tryParse(json['unit_id']?.toString() ?? ''),
+      unitName: json['unit'] != null ? json['unit']['short_name'] ?? json['unit']['name'] : null,
     );
   }
 
