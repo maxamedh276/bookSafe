@@ -4,8 +4,12 @@ import '../models/unit_model.dart';
 
 final unitsProvider = FutureProvider<List<Unit>>((ref) async {
   final apiService = ref.watch(apiServiceProvider);
-  final response = await apiService.get('/units');
-  
-  final List<dynamic> data = response.data;
-  return data.map((item) => Unit.fromJson(item)).toList();
+  try {
+    final response = await apiService.get('/units');
+    final data = response.data;
+    if (data is! List) return [];
+    return data.map((item) => Unit.fromJson(item as Map<String, dynamic>)).toList();
+  } catch (e) {
+    throw apiService.getErrorMessage(e);
+  }
 });

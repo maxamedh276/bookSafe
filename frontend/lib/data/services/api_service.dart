@@ -3,15 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
+  //static const String _defaultBaseUrl = 'http://localhost:5000/api';
+  static const String _defaultBaseUrl = 'http://10.150.141.126:5000/api';
   final Dio _dio;
   final _storage = const FlutterSecureStorage();
 
-  ApiService() : _dio = Dio(BaseOptions(
-    // Base URL can be changed based on environment
-    baseUrl: 'https://booksafe-2.onrender.com/api', 
-    connectTimeout: const Duration(seconds: 60),
-    receiveTimeout: const Duration(seconds: 60),
-  )) {
+  ApiService() : _dio = Dio(
+          BaseOptions(
+            // Local backend only
+            baseUrl: _defaultBaseUrl,
+            connectTimeout: const Duration(seconds: 60),
+            receiveTimeout: const Duration(seconds: 60),
+          ),
+        ) {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         final token = await _storage.read(key: 'token');
@@ -57,6 +61,68 @@ class ApiService {
 
   Future<Response> delete(String path) async {
     return await _dio.delete(path);
+  }
+
+  String getErrorMessage(Object error) {
+    if (error is DioException) {
+      final data = error.response?.data;
+      if (data is Map<String, dynamic>) {
+        final message = data['message']?.toString();
+        if (message != null && message.isNotEmpty) {
+          return _humanizeMessage(message);
+        }
+      }
+
+      switch (error.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          return 'Server-ku way dib u dhacaysaa. Fadlan isku day mar kale.';
+        case DioExceptionType.connectionError:
+          return 'Server-ka lama gaari karo. Hubi internet-kaaga ama backend-ka inuu socdo.';
+        case DioExceptionType.badResponse:
+          final status = error.response?.statusCode;
+          if (status == 401) return 'Email-ka ama password-ka waa khalad.';
+          if (status == 403) return 'Ma haysatid ogolaansho inaad gasho qaybtan.';
+          if (status == 404) return 'Wax la raadinayay lama helin.';
+          return 'Server-ku wuxuu soo celiyay jawaab aan la filayn.';
+        case DioExceptionType.cancel:
+          return 'Codsiga waa la joojiyay.';
+        case DioExceptionType.badCertificate:
+        case DioExceptionType.unknown:
+          return 'Khalad shabakadeed ayaa dhacay. Fadlan isku day mar kale.';
+      }
+    }
+
+    return error.toString();
+  }
+
+  String _humanizeMessage(String message) {
+    final lower = message.toLowerCase();
+
+    if (lower.contains('pending')) {
+      return 'Akoonkaaga wali waa PENDING — ma geli kartid ilaa IT Admin uu ku approve gareeyo.';
+    }
+    if (lower.contains('suspended')) {
+      return 'Akoonkaaga waa la hakiyey (SUSPENDED). Fadlan la xidhiidh IT Admin-ka.';
+    }
+    if (lower.contains('blocked')) {
+      return 'Akoonkaaga waa la xannibay (BLOCKED). Fadlan la xidhiidh IT Admin-ka.';
+    }
+    if (lower.contains('email-ka ama password-ka')) {
+      return message;
+    }
+    if (lower.contains('role-kaaga') || lower.contains('uma oggola')) {
+      return 'Ma haysatid ogolaansho inaad gasho qaybtan.';
+    }
+    if (lower.contains('user already exists')) {
+      return 'Email-kan horay ayaa loo isticmaalay.';
+    }
+    if (lower.contains('branch limit') || lower.contains('xadka laamaha')) {
+      return message;
+    }
+
+    return message;
   }
 }
 

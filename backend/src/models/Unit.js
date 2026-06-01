@@ -12,7 +12,7 @@ const Unit = sequelize.define('Unit', {
         allowNull: false,
         unique: true,
     },
-    abbreviation: {
+    shortName: {
         type: DataTypes.STRING(10),
         allowNull: false,
     },

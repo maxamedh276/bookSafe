@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../modules/auth/views/login_view.dart';
 import '../../modules/auth/views/register_view.dart';
@@ -30,6 +29,13 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (!isAuth && !isLoggingIn) return '/login';
       if (isAuth && isLoggingIn) return '/';
+
+      // IT admin manages tenants via /admin, not /users
+      final role = authState.user?['role']?.toString() ?? '';
+      if (isAuth && role == 'it_admin' && state.matchedLocation == '/users') {
+        return '/admin';
+      }
+
       return null;
     },
     routes: [

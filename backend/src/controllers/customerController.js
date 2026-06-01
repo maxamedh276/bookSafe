@@ -1,4 +1,5 @@
 const Customer = require('../models/Customer');
+const { ValidationError } = require('sequelize');
 
 // @desc    Get all customers for a tenant
 // @route   GET /api/customers
@@ -22,19 +23,26 @@ const createCustomer = async (req, res) => {
     const { name, phone, email, address } = req.body;
 
     try {
+        if (!name || !phone) {
+            return res.status(400).json({ message: 'Magaca iyo telefoonka waa qasab.' });
+        }
+
         const customer = await Customer.create({
             tenant_id: req.user.tenant_id,
-            branch_id: req.user.branch_id,
+            branch_id: req.user?.branch_id ?? null,
             name,
             phone,
-            email,
-            address,
-            debt_balance: 0.00
+            email: email ?? null,
+            address: address ?? null,
+            debt_balance: 0.00,
         });
 
         res.status(201).json(customer);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        if (error instanceof ValidationError) {
+            return res.status(400).json({ message: error.errors?.[0]?.message || 'Customer validation failed.' });
+        }
+        res.status(500).json({ message: 'Server error while creating customer.' });
     }
 };
 
@@ -61,7 +69,10 @@ const updateCustomer = async (req, res) => {
         const updated = await customer.save();
         res.json(updated);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        if (error instanceof ValidationError) {
+            return res.status(400).json({ message: error.errors?.[0]?.message || 'Customer validation failed.' });
+        }
+        res.status(500).json({ message: 'Server error while updating customer.' });
     }
 };
 
@@ -81,7 +92,7 @@ const deleteCustomer = async (req, res) => {
         await customer.destroy();
         res.json({ message: 'Macmiilka waa la tirtiray' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Server error while deleting customer.' });
     }
 };
 
@@ -100,7 +111,7 @@ const getCustomerById = async (req, res) => {
             res.status(404).json({ message: 'Macmiilka lama helin' });
         }
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Server error while loading customer.' });
     }
 };
 
@@ -115,7 +126,7 @@ const getDebtors = async (req, res) => {
         });
         res.json(debtors);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Server error while loading debtors.' });
     }
 };
 
@@ -138,7 +149,7 @@ const getCustomerHistory = async (req, res) => {
 
         res.json({ sales, payments });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Server error while loading customer history.' });
     }
 };
 

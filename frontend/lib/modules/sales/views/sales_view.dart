@@ -10,8 +10,7 @@ import '../../../data/services/api_service.dart';
 import '../../../core/services/receipt_service.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../core/services/offline_sync_service.dart';
-import '../../../data/models/unit_model.dart';
-import '../../../data/providers/unit_provider.dart';
+import '../../../core/widgets/unit_dropdown.dart';
 
 class SalesView extends ConsumerStatefulWidget {
   const SalesView({super.key});
@@ -1086,29 +1085,9 @@ class _QuickAddProductDialogState extends ConsumerState<QuickAddProductDialog> {
               validator: (v) => v!.isEmpty ? 'Fadlan gali tirada' : null,
             ),
             const SizedBox(height: 16),
-            Consumer(
-              builder: (context, ref, _) {
-                final unitsAsync = ref.watch(unitsProvider);
-                return unitsAsync.when(
-                  data: (units) => DropdownButtonFormField<int>(
-                    decoration: const InputDecoration(labelText: 'Unugga (Unit)'),
-                    value: _selectedUnitId,
-                    items: [
-                      const DropdownMenuItem<int>(
-                        value: null,
-                        child: Text('Dhib malahan (None)'),
-                      ),
-                      ...units.map((u) => DropdownMenuItem(
-                            value: u.id,
-                            child: Text('${u.name} (${u.shortName})'),
-                          ))
-                    ],
-                    onChanged: (val) => setState(() => _selectedUnitId = val),
-                  ),
-                  loading: () => const CircularProgressIndicator(),
-                  error: (e, s) => Text('Error loading units: $e'),
-                );
-              },
+            UnitDropdown(
+              value: _selectedUnitId,
+              onChanged: (val) => setState(() => _selectedUnitId = val),
             ),
           ],
         ),

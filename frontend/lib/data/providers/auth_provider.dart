@@ -76,10 +76,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user: userData,
       );
     } catch (e) {
-      print('LOGIN ERROR: $e'); // Added print for debugging
       state = state.copyWith(
         isLoading: false,
-        error: 'Login failed: $e', // Show actual error briefly to debug
+        error: _apiService.getErrorMessage(e),
       );
     }
   }
@@ -92,7 +91,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Diiwaangelintu waa fashilantay. Fadlan isku day mar kale.',
+        error: _apiService.getErrorMessage(e),
       );
     }
   }

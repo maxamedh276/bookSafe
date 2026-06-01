@@ -12,7 +12,7 @@ class ReceiptService {
     required String paymentStatus,
     required List<Map<String, dynamic>> items,
     required double totalAmount,
-    this.discount = 0.0,
+    double discount = 0.0,
     required double paidAmount,
     required double debtAmount,
     required DateTime saleDate,

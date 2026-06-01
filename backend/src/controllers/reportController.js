@@ -62,15 +62,33 @@ const getSalesSummary = async (req, res) => {
 // @access  Private
 const getTopProducts = async (req, res) => {
     try {
+        const saleWhere = { tenant_id: req.user.tenant_id };
+        if (req.user.branch_id) {
+            saleWhere.branch_id = req.user.branch_id;
+        }
+
         const topProducts = await SaleItem.findAll({
             attributes: [
                 'product_id',
-                [sequelize.fn('SUM', sequelize.col('quantity')), 'total_quantity'],
-                [sequelize.fn('SUM', sequelize.col('subtotal')), 'total_revenue'],
+                [sequelize.fn('SUM', sequelize.col('SaleItem.quantity')), 'total_quantity'],
+                [sequelize.fn('SUM', sequelize.col('SaleItem.subtotal')), 'total_revenue'],
             ],
-            include: [{ model: Product, attributes: ['name', 'price'] }],
-            group: ['product_id', 'Product.id'],
-            order: [[sequelize.fn('SUM', sequelize.col('quantity')), 'DESC']],
+            include: [
+                {
+                    model: Product,
+                    attributes: ['name', 'price'],
+                    where: { tenant_id: req.user.tenant_id },
+                    required: true,
+                },
+                {
+                    model: Sale,
+                    attributes: [],
+                    where: saleWhere,
+                    required: true,
+                },
+            ],
+            group: ['SaleItem.product_id', 'Product.id', 'Product.name', 'Product.price'],
+            order: [[sequelize.fn('SUM', sequelize.col('SaleItem.quantity')), 'DESC']],
             limit: 10,
         });
 
@@ -107,11 +125,17 @@ const getDailySales = async (req, res) => {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+        const whereClause = {
+            tenant_id: req.user.tenant_id,
+            sale_date: { [Op.gte]: thirtyDaysAgo },
+        };
+
+        if (req.user.branch_id) {
+            whereClause.branch_id = req.user.branch_id;
+        }
+
         const sales = await Sale.findAll({
-            where: {
-                tenant_id: req.user.tenant_id,
-                sale_date: { [Op.gte]: thirtyDaysAgo }
-            },
+            where: whereClause,
             attributes: [
                 [sequelize.fn('DATE', sequelize.col('sale_date')), 'date'],
                 [sequelize.fn('SUM', sequelize.col('total_amount')), 'total_sales'],
@@ -136,6 +160,9 @@ const exportSalesCSV = async (req, res) => {
 
     try {
         const whereClause = { tenant_id: req.user.tenant_id };
+        if (req.user.branch_id) {
+            whereClause.branch_id = req.user.branch_id;
+        }
         if (startDate && endDate) {
             whereClause.sale_date = { [Op.between]: [new Date(startDate), new Date(endDate)] };
         }

@@ -24,7 +24,7 @@ class AdminNotifier extends StateNotifier<AsyncValue<void>> {
       });
       state = const AsyncValue.data(null);
     } catch (e, s) {
-      state = AsyncValue.error(e, s);
+      state = AsyncValue.error(_api.getErrorMessage(e), s);
     }
   }
 
@@ -37,7 +37,7 @@ class AdminNotifier extends StateNotifier<AsyncValue<void>> {
       await ref.read(authProvider.notifier).setImpersonation(data);
       state = const AsyncValue.data(null);
     } catch (e, s) {
-      state = AsyncValue.error(e, s);
+      state = AsyncValue.error(_api.getErrorMessage(e), s);
     }
   }
 }

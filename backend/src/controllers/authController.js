@@ -27,9 +27,25 @@ const loginUser = async (req, res) => {
 
         // 3. Check Tenant status (Haddii aanu IT Admin ahayn)
         if (user.role !== 'it_admin' && user.Tenant) {
-            if (user.Tenant.status !== 'active') {
+            const tenantStatus = user.Tenant.status;
+            if (tenantStatus === 'pending') {
                 return res.status(403).json({
-                    message: `Nidaamkaaga waa ${user.Tenant.status}. Fadlan la xidhiidh IT Admin-ka.`
+                    message: 'Akoonkaaga wali waa PENDING. Fadlan sug inta IT Admin uu ku approve gareeyo.'
+                });
+            }
+            if (tenantStatus === 'suspended') {
+                return res.status(403).json({
+                    message: 'Akoonkaaga waa la hakiyey (SUSPENDED). Fadlan la xidhiidh IT Admin-ka.'
+                });
+            }
+            if (tenantStatus === 'blocked') {
+                return res.status(403).json({
+                    message: 'Akoonkaaga waa la xannibay (BLOCKED). Fadlan la xidhiidh IT Admin-ka.'
+                });
+            }
+            if (tenantStatus !== 'active') {
+                return res.status(403).json({
+                    message: `Akoonkaaga xaaladdiisu waa "${tenantStatus}". Fadlan la xidhiidh IT Admin-ka.`
                 });
             }
         }

@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/product_provider.dart';
 import '../../../data/models/product_model.dart';
-import '../../../data/models/unit_model.dart';
 import '../../../data/services/api_service.dart';
-import '../../../data/providers/unit_provider.dart';
+import '../../../core/widgets/unit_dropdown.dart';
 
 class InventoryView extends ConsumerStatefulWidget {
   const InventoryView({super.key});
@@ -66,29 +65,9 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
-                Consumer(
-                  builder: (context, ref, _) {
-                    final unitsAsync = ref.watch(unitsProvider);
-                    return unitsAsync.when(
-                      data: (units) => DropdownButtonFormField<int>(
-                        decoration: const InputDecoration(labelText: 'Unugga (Unit)'),
-                        value: selectedUnitId,
-                        items: [
-                          const DropdownMenuItem<int>(
-                            value: null,
-                            child: Text('Dhib malahan (None)'),
-                          ),
-                          ...units.map((u) => DropdownMenuItem(
-                                value: u.id,
-                                child: Text('${u.name} (${u.shortName})'),
-                              ))
-                        ],
-                        onChanged: (val) => setState(() => selectedUnitId = val),
-                      ),
-                      loading: () => const CircularProgressIndicator(),
-                      error: (e, s) => Text('Error loading units: $e'),
-                    );
-                  },
+                UnitDropdown(
+                  value: selectedUnitId,
+                  onChanged: (val) => setState(() => selectedUnitId = val),
                 ),
               ],
             ),
@@ -626,65 +605,46 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Magaca Alaabta'),
-                validator: (v) => v!.isEmpty ? 'Gali magaca' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _skuController,
-                decoration: const InputDecoration(labelText: 'SKU / Barcode'),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _priceController,
-                      decoration: const InputDecoration(labelText: 'Qiimaha (\$)'),
-                      keyboardType: TextInputType.number,
-                      validator: (v) => v!.isEmpty ? 'Gali qiimaha' : null,
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Magaca Alaabta'),
+                  validator: (v) => v!.isEmpty ? 'Gali magaca' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _skuController,
+                  decoration: const InputDecoration(labelText: 'SKU / Barcode'),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _priceController,
+                        decoration: const InputDecoration(labelText: 'Qiimaha (\$)'),
+                        keyboardType: TextInputType.number,
+                        validator: (v) => v!.isEmpty ? 'Gali qiimaha' : null,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _stockController,
-                      decoration: const InputDecoration(labelText: 'Tirada (Stock)'),
-                      keyboardType: TextInputType.number,
-                      validator: (v) => v!.isEmpty ? 'Gali tirada' : null,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _stockController,
+                        decoration: const InputDecoration(labelText: 'Tirada (Stock)'),
+                        keyboardType: TextInputType.number,
+                        validator: (v) => v!.isEmpty ? 'Gali tirada' : null,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Consumer(
-                builder: (context, ref, _) {
-                  final unitsAsync = ref.watch(unitsProvider);
-                  return unitsAsync.when(
-                    data: (units) => DropdownButtonFormField<int>(
-                      decoration: const InputDecoration(labelText: 'Unugga (Unit)'),
-                      value: _selectedUnitId,
-                      items: [
-                        const DropdownMenuItem<int>(
-                          value: null,
-                          child: Text('Dhib malahan (None)'),
-                        ),
-                        ...units.map((u) => DropdownMenuItem(
-                              value: u.id,
-                              child: Text('${u.name} (${u.shortName})'),
-                            ))
-                      ],
-                      onChanged: (val) => setState(() => _selectedUnitId = val),
-                    ),
-                    loading: () => const CircularProgressIndicator(),
-                    error: (e, s) => Text('Error loading units: $e'),
-                  );
-                },
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 16),
+                UnitDropdown(
+                  value: _selectedUnitId,
+                  onChanged: (val) => setState(() => _selectedUnitId = val),
+                ),
+              ],
+            ),
           ),
         ),
       ),

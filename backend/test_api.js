@@ -1,6 +1,6 @@
-const https = require('https');
+const http = require('http');
 
-https.get('https://booksafe-2.onrender.com/', (res) => {
+http.get('http://localhost:5000/', (res) => {
   console.log('statusCode:', res.statusCode);
   console.log('headers:', res.headers);
 

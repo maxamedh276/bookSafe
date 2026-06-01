@@ -28,7 +28,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       _NavItem(s.customers,    Icons.people_outline,                  '/customers'),
       _NavItem(s.debts,        Icons.account_balance_wallet_outlined, '/debts'),
       _NavItem(s.reports,      Icons.bar_chart_outlined,              '/reports'),
-      if (role == 'tenant_admin' || role == 'it_admin') ...[
+      if (role == 'tenant_admin') ...[
         _NavItem(s.users,    Icons.manage_accounts_outlined, '/users'),
         _NavItem(s.branches, Icons.store_outlined,           '/branches'),
       ],
