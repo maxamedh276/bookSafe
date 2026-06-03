@@ -19,15 +19,32 @@ class CartItem {
 class CartNotifier extends StateNotifier<List<CartItem>> {
   CartNotifier() : super([]);
 
-  void addToCart(Product product) {
+  void addToCart(Product product, {int quantity = 1}) {
+    final qty = quantity < 1 ? 1 : quantity;
     final existingIndex = state.indexWhere((item) => item.product.id == product.id);
     if (existingIndex != -1) {
       final newState = List<CartItem>.from(state);
-      newState[existingIndex].quantity++;
+      newState[existingIndex].quantity += qty;
       state = newState;
     } else {
-      state = [...state, CartItem(product: product)];
+      state = [...state, CartItem(product: product, quantity: qty)];
     }
+  }
+
+  /// Add [amount] to current line quantity (used when user enters bulk qty then taps +).
+  void incrementQuantityBy(int productId, int amount) {
+    final add = amount < 1 ? 1 : amount;
+    final index = state.indexWhere((i) => i.product.id == productId);
+    if (index == -1) return;
+    updateQuantity(productId, state[index].quantity + add);
+  }
+
+  /// Subtract [amount] from current line quantity (min 0 removes line).
+  void decrementQuantityBy(int productId, int amount) {
+    final sub = amount < 1 ? 1 : amount;
+    final index = state.indexWhere((i) => i.product.id == productId);
+    if (index == -1) return;
+    updateQuantity(productId, state[index].quantity - sub);
   }
 
   void removeFromCart(int productId) {

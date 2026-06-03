@@ -5,6 +5,7 @@ import '../../modules/home/views/home_view.dart';
 import '../../modules/sales/views/sales_view.dart';
 import '../../modules/inventory/views/inventory_view.dart';
 import '../../modules/customers/views/customers_view.dart';
+import '../../modules/customers/views/customer_detail_view.dart';
 import '../../modules/debts/views/debts_view.dart';
 import '../../modules/reports/views/reports_view.dart';
 import '../../modules/admin/views/tenants_list_view.dart';
@@ -68,6 +69,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/customers',
             builder: (context, state) => const CustomersView(),
+          ),
+          GoRoute(
+            path: '/customers/:id',
+            builder: (context, state) {
+              final id = int.parse(state.pathParameters['id']!);
+              return CustomerDetailView(customerId: id);
+            },
           ),
           GoRoute(
             path: '/debts',

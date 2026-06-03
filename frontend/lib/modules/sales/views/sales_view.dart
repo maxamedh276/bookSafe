@@ -25,12 +25,105 @@ class _SalesViewState extends ConsumerState<SalesView> {
   String paymentStatus = 'paid'; // 'paid' or 'credit'
   double discount = 0.0;
   final descriptionController = TextEditingController();
+  /// Qty to add when tapping a product from the grid (e.g. 50 at once).
+  final _defaultAddQtyController = TextEditingController(text: '1');
+  final Map<int, TextEditingController> _cartQtyControllers = {};
+  final Map<int, FocusNode> _cartQtyFocusNodes = {};
+
+  @override
+  void dispose() {
+    descriptionController.dispose();
+    _defaultAddQtyController.dispose();
+    for (final c in _cartQtyControllers.values) {
+      c.dispose();
+    }
+    for (final n in _cartQtyFocusNodes.values) {
+      n.dispose();
+    }
+    super.dispose();
+  }
+
+  TextEditingController _cartQtyControllerFor(int productId) {
+    return _cartQtyControllers.putIfAbsent(
+      productId,
+      () => TextEditingController(text: '1'),
+    );
+  }
+
+  FocusNode _cartQtyFocusFor(int productId) {
+    return _cartQtyFocusNodes.putIfAbsent(productId, () => FocusNode());
+  }
+
+  /// Keep qty field in sync with cart unless user is typing in it.
+  void _syncCartQtyField(int productId, int quantity) {
+    if (_cartQtyFocusFor(productId).hasFocus) return;
+    _setCartQtyFieldText(productId, quantity);
+  }
+
+  void _setCartQtyFieldText(int productId, int quantity) {
+    final c = _cartQtyControllerFor(productId);
+    final text = quantity.toString();
+    if (c.text == text) return;
+    c.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+
+  int _lineQty(int productId) {
+    for (final item in ref.read(cartProvider)) {
+      if (item.product.id == productId) return item.quantity;
+    }
+    return 0;
+  }
+
+  void _incrementLineQty(int productId) {
+    final step = _parsedDefaultAddQty();
+    final newQty = _lineQty(productId) + step;
+    ref.read(cartProvider.notifier).updateQuantity(productId, newQty);
+    _setCartQtyFieldText(productId, newQty);
+    _cartQtyFocusFor(productId).unfocus();
+  }
+
+  void _decrementLineQty(int productId) {
+    final step = _parsedDefaultAddQty();
+    final newQty = _lineQty(productId) - step;
+    if (newQty <= 0) {
+      ref.read(cartProvider.notifier).removeFromCart(productId);
+    } else {
+      ref.read(cartProvider.notifier).updateQuantity(productId, newQty);
+      _setCartQtyFieldText(productId, newQty);
+    }
+    _cartQtyFocusFor(productId).unfocus();
+  }
+
+  void _applyCartQtyFromField(int productId) {
+    final raw = _cartQtyControllerFor(productId).text.trim();
+    if (raw.isEmpty) return;
+    final n = int.tryParse(raw);
+    if (n == null) return;
+    ref.read(cartProvider.notifier).updateQuantity(productId, n);
+  }
+
+  int _parsedDefaultAddQty() {
+    final n = int.tryParse(_defaultAddQtyController.text.trim());
+    return (n == null || n < 1) ? 1 : n;
+  }
+
+  void _addProductToCart(Product product) {
+    ref.read(cartProvider.notifier).addToCart(product, quantity: _parsedDefaultAddQty());
+  }
 
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(productsProvider);
     final customersAsync = ref.watch(customersProvider);
     final cart = ref.watch(cartProvider);
+    ref.listen<List<CartItem>>(cartProvider, (_, next) {
+      for (final item in next) {
+        _syncCartQtyField(item.product.id, item.quantity);
+      }
+    });
     final subtotal = cart.fold<double>(0, (sum, item) => sum + item.total);
     final totalAmount = (subtotal - discount) > 0 ? (subtotal - discount) : 0.0;
 
@@ -251,178 +344,155 @@ class _SalesViewState extends ConsumerState<SalesView> {
                     BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(-2, 0)),
                   ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Diiwaanka Iibka',
-                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary),
-                            ),
-                            const SizedBox(height: 24),
-
-                            // Customer Selection
-                            const Text('Macaamiilka', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: customersAsync.when(
-                                    data: (customers) {
-                                      final currentCustomer = customers.any((c) => c.id == selectedCustomer?.id) 
-                                          ? customers.firstWhere((c) => c.id == selectedCustomer?.id)
-                                          : null;
-
-                                      if (customers.isEmpty) {
-                                        return const Text(
-                                          'Diiwaanka macmiil kuma jiro. Fadlan mid ku dar.',
-                                          style: TextStyle(color: AppColors.error, fontSize: 13),
-                                        );
-                                      }
-
-                                      return DropdownMenu<Customer>(
-                                        initialSelection: currentCustomer,
-                                        expandedInsets: EdgeInsets.zero,
-                                        hintText: 'Baadh ama Dooro Macmiil...',
-                                        textStyle: const TextStyle(fontSize: 13),
-                                        inputDecorationTheme: InputDecorationTheme(
-                                          fillColor: AppColors.background,
-                                          filled: true,
-                                          isDense: true,
-                                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-                                        ),
-                                        dropdownMenuEntries: customers.map((c) => DropdownMenuEntry<Customer>(
-                                          value: c,
-                                          label: c.name,
-                                        )).toList(),
-                                        onSelected: (v) {
-                                          if (v != null) {
-                                            setState(() => selectedCustomer = v);
-                                          }
-                                        },
-                                      );
-                                    },
-                                    loading: () => const LinearProgressIndicator(),
-                                    error: (e, s) => Text('Error: $e', style: const TextStyle(color: Colors.red, fontSize: 10)),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  icon: const Icon(Icons.person_add_alt_1, color: AppColors.primary, size: 28),
-                                  onPressed: () => _showQuickAddCustomer(context),
-                                  tooltip: 'Macmiil Cusub',
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Payment Toggle
-                            const Text('Habka Lacag Bixinta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                _buildPaymentOption('paid', 'Kash', Icons.money),
-                                const SizedBox(width: 8),
-                                _buildPaymentOption('credit', 'Deyn', Icons.credit_card),
-                              ],
-                            ),
-                            
-                            const Divider(height: 48),
-
-                            // Cart Items
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('Alaabta Iibka', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                if (cart.isNotEmpty)
-                                  TextButton(
-                                    onPressed: () => ref.read(cartProvider.notifier).clear(),
-                                    child: const Text('Tirtir', style: TextStyle(color: AppColors.error)),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            if (cart.isEmpty)
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 40),
-                                child: Center(child: Text('Cart-ku waa madhan yahay.', style: TextStyle(color: Colors.grey))),
-                              )
-                            else
-                              ...cart.map((item) => _buildCartItem(item)),
-                          ],
-                        ),
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.fromLTRB(
+                    24,
+                    24,
+                    24,
+                    24 + MediaQuery.viewInsetsOf(context).bottom,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Diiwaanka Iibka',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary),
                       ),
-                    ),
-                    
-                    // Fixed Summary & Action at bottom
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border(top: BorderSide(color: Colors.grey.withOpacity(0.1))),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(height: 16),
-                          _buildSummaryRow('Kudhig (Subtotal)', '\$${subtotal.toStringAsFixed(2)}'),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      const SizedBox(height: 24),
+
+                      _buildCustomerSelector(customersAsync),
+                      const SizedBox(height: 16),
+
+                      const Text('Habka Lacag Bixinta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      const SizedBox(height: 8),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          if (constraints.maxWidth < 260) {
+                            return Column(
+                              children: [
+                                _buildPaymentOption('paid', 'Kash', Icons.money, fullWidth: true),
+                                const SizedBox(height: 8),
+                                _buildPaymentOption('credit', 'Deyn', Icons.credit_card, fullWidth: true),
+                              ],
+                            );
+                          }
+                          return Row(
                             children: [
-                              const Text('Diiskaawanka (Discount)', style: TextStyle(fontSize: 14)),
-                              SizedBox(
-                                width: 100,
-                                child: TextField(
-                                  keyboardType: TextInputType.number,
-                                  textAlign: TextAlign.right,
-                                  decoration: const InputDecoration(
-                                    isDense: true,
-                                    prefixText: '\$ ',
-                                    contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                                  ),
-                                  onChanged: (val) {
-                                    setState(() {
-                                      discount = double.tryParse(val) ?? 0.0;
-                                    });
-                                  },
-                                ),
-                              ),
+                              _buildPaymentOption('paid', 'Kash', Icons.money),
+                              const SizedBox(width: 8),
+                              _buildPaymentOption('credit', 'Deyn', Icons.credit_card),
                             ],
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: descriptionController,
-                            decoration: const InputDecoration(
-                              labelText: 'Faahfaahin (opsiyaal ah)',
-                              border: OutlineInputBorder(),
+                          );
+                        },
+                      ),
+
+                      const Divider(height: 48),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Alaabta Iibka', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          if (cart.isNotEmpty)
+                            TextButton(
+                              onPressed: () => ref.read(cartProvider.notifier).clear(),
+                              child: const Text('Tirtir', style: TextStyle(color: AppColors.error)),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Text('Tirada marka la daro:', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            width: 72,
+                            child: TextField(
+                              controller: _defaultAddQtyController,
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              decoration: InputDecoration(
+                                isDense: true,
+                                hintText: '1',
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          const Divider(),
-                          _buildSummaryRow('Warta Guud (Total)', '\$${totalAmount.toStringAsFixed(2)}', isPrimary: true),
-                          const SizedBox(height: 24),
-                          ElevatedButton(
-                            onPressed: cart.isEmpty ? null : () => _handleCheckout(),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              minimumSize: const Size(double.infinity, 58),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          const SizedBox(width: 6),
+                                const Expanded(
+                                  child: Text(
+                                    'Guji alaab = ku dar; +/- = kordhi/ka jar tiradan',
+                                    style: TextStyle(fontSize: 10, color: AppColors.textLight),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      if (cart.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 40),
+                          child: Center(child: Text('Cart-ku waa madhan yahay.', style: TextStyle(color: Colors.grey))),
+                        )
+                      else
+                        ...cart.map((item) => _buildCartItem(item)),
+
+                      const SizedBox(height: 24),
+                      Divider(color: Colors.grey.withOpacity(0.15)),
+                      const SizedBox(height: 16),
+                      _buildSummaryRow('Kudhig (Subtotal)', '\$${subtotal.toStringAsFixed(2)}'),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          const Text('Diiskaawanka (Discount)', style: TextStyle(fontSize: 14)),
+                          SizedBox(
+                            width: 120,
+                            child: TextField(
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.right,
+                              decoration: const InputDecoration(
+                                isDense: true,
+                                prefixText: '\$ ',
+                                contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                              ),
+                              onChanged: (val) {
+                                setState(() {
+                                  discount = double.tryParse(val) ?? 0.0;
+                                });
+                              },
                             ),
-                            child: const Text('Gudbi Iibka', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: descriptionController,
+                        decoration: const InputDecoration(
+                          labelText: 'Faahfaahin (opsiyaal ah)',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(),
+                      _buildSummaryRow('Warta Guud (Total)', '\$${totalAmount.toStringAsFixed(2)}', isPrimary: true),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: cart.isEmpty ? null : () => _handleCheckout(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          minimumSize: const Size(double.infinity, 58),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Gudbi Iibka', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
                 ),
               );
 
@@ -574,9 +644,7 @@ class _SalesViewState extends ConsumerState<SalesView> {
                                             ),
                                             trailing: const Icon(Icons.add_shopping_cart_outlined,
                                                 color: AppColors.primary),
-                                            onTap: () => ref
-                                                .read(cartProvider.notifier)
-                                                .addToCart(product),
+                                            onTap: () => _addProductToCart(product),
                                           );
                                         },
                                       );
@@ -609,97 +677,227 @@ class _SalesViewState extends ConsumerState<SalesView> {
     ));
   }
 
-  Widget _buildPaymentOption(String value, String label, IconData icon) {
-    final isSelected = paymentStatus == value;
-    return Expanded(
-      child: InkWell(
-        onTap: () => setState(() => paymentStatus = value),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.white,
-            border: Border.all(color: isSelected ? AppColors.primary : Colors.grey.withOpacity(0.3)),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, color: isSelected ? Colors.white : Colors.grey),
-              const SizedBox(height: 4),
-              Text(label, textAlign: TextAlign.center, style: TextStyle(color: isSelected ? Colors.white : Colors.black87, fontSize: 10, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-            ],
+  Widget _buildCustomerSelector(AsyncValue<List<Customer>> customersAsync) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text('Macaamiilka', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        const SizedBox(height: 8),
+        customersAsync.when(
+          data: (customers) {
+            if (customers.isEmpty) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Diiwaanka macmiil kuma jiro. Fadlan mid ku dar.',
+                    style: TextStyle(color: AppColors.error, fontSize: 13),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => _showQuickAddCustomer(context),
+                      icon: const Icon(Icons.person_add_alt_1, size: 20),
+                      label: const Text('Ku dar macmiil'),
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            final selectedId = customers.any((c) => c.id == selectedCustomer?.id)
+                ? selectedCustomer!.id
+                : null;
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<int?>(
+                    isExpanded: true,
+                    value: selectedId,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: AppColors.background,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    hint: const Text('Dooro macmiil...', overflow: TextOverflow.ellipsis),
+                    items: [
+                      const DropdownMenuItem<int?>(
+                        value: null,
+                        child: Text('Dhib malahan', overflow: TextOverflow.ellipsis),
+                      ),
+                      ...customers.map(
+                        (c) => DropdownMenuItem<int?>(
+                          value: c.id,
+                          child: Text(c.name, overflow: TextOverflow.ellipsis),
+                        ),
+                      ),
+                    ],
+                    onChanged: (id) {
+                      setState(() {
+                        if (id == null) {
+                          selectedCustomer = null;
+                        } else {
+                          selectedCustomer = customers.firstWhere((c) => c.id == id);
+                        }
+                      });
+                    },
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.person_add_alt_1, color: AppColors.primary),
+                  onPressed: () => _showQuickAddCustomer(context),
+                  tooltip: 'Macmiil Cusub',
+                ),
+              ],
+            );
+          },
+          loading: () => const LinearProgressIndicator(),
+          error: (e, _) => Text(
+            ref.read(apiServiceProvider).getErrorMessage(e),
+            style: const TextStyle(color: Colors.red, fontSize: 12),
           ),
         ),
-      ),
+      ],
     );
   }
 
+  Widget _buildPaymentOption(String value, String label, IconData icon, {bool fullWidth = false}) {
+    final isSelected = paymentStatus == value;
+    final button = InkWell(
+      onTap: () => setState(() => paymentStatus = value),
+      child: Container(
+        width: fullWidth ? double.infinity : null,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.white,
+          border: Border.all(color: isSelected ? AppColors.primary : Colors.grey.withOpacity(0.3)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: isSelected ? Colors.white : Colors.grey),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.black87,
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    return fullWidth ? button : Expanded(child: button);
+  }
+
   Widget _buildCartItem(CartItem item) {
+    _syncCartQtyField(item.product.id, item.quantity);
+    final step = _parsedDefaultAddQty();
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => _showEditPriceDialog(item),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '\$${item.price.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.edit_outlined, size: 14, color: AppColors.primary),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'x ${item.quantity}',
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '\$${item.total.toStringAsFixed(2)}',
-            style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.primary),
-          ),
-          const SizedBox(width: 6),
           Row(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.remove_circle_outline, size: 20, color: AppColors.error),
-                onPressed: () => ref.read(cartProvider.notifier).updateQuantity(item.product.id, item.quantity - 1),
+              Expanded(
+                child: Text(
+                  item.product.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              Text('${item.quantity}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(width: 8),
+              Text(
+                '\$${item.total.toStringAsFixed(2)}',
+                style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.primary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Flexible(
+                child: GestureDetector(
+                  onTap: () => _showEditPriceDialog(item),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '\$${item.price.toStringAsFixed(2)}',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.edit_outlined, size: 14, color: AppColors.primary),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const Spacer(),
               IconButton(
                 visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.add_circle_outline, size: 20, color: AppColors.success),
-                onPressed: () => ref.read(cartProvider.notifier).updateQuantity(item.product.id, item.quantity + 1),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                icon: const Icon(Icons.remove_circle_outline, size: 22, color: AppColors.error),
+                onPressed: () => _decrementLineQty(item.product.id),
+                tooltip: 'Ka jar $step',
+              ),
+              SizedBox(
+                width: 72,
+                child: TextField(
+                  controller: _cartQtyControllerFor(item.product.id),
+                  focusNode: _cartQtyFocusFor(item.product.id),
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    labelText: 'Tirada',
+                    labelStyle: const TextStyle(fontSize: 9),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onChanged: (_) => _applyCartQtyFromField(item.product.id),
+                  onSubmitted: (_) => _applyCartQtyFromField(item.product.id),
+                ),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                icon: const Icon(Icons.add_circle_outline, size: 22, color: AppColors.success),
+                onPressed: () => _incrementLineQty(item.product.id),
+                tooltip: 'Ku dar $step',
               ),
             ],
           ),
@@ -712,10 +910,11 @@ class _SalesViewState extends ConsumerState<SalesView> {
     final controller = TextEditingController(text: item.price.toStringAsFixed(2));
     final newValue = await showDialog<double>(
       context: context,
+      useSafeArea: false,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Beddel qiimaha'),
-          content: TextField(
+        return SalesResponsiveDialog(
+          title: 'Beddel qiimaha',
+          child: TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(
@@ -772,7 +971,7 @@ class _SalesViewState extends ConsumerState<SalesView> {
 
   Widget _buildProductCard(Product product) {
     return InkWell(
-      onTap: () => ref.read(cartProvider.notifier).addToCart(product),
+      onTap: () => _addProductToCart(product),
       child: Card(
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -844,6 +1043,8 @@ class _SalesViewState extends ConsumerState<SalesView> {
   void _showQuickAddProduct(BuildContext context) {
     showDialog(
       context: context,
+      barrierDismissible: true,
+      useSafeArea: false,
       builder: (context) => const QuickAddProductDialog(),
     ).then((value) {
       if (value == true) ref.invalidate(productsProvider);
@@ -851,8 +1052,10 @@ class _SalesViewState extends ConsumerState<SalesView> {
   }
 
   void _showQuickAddCustomer(BuildContext context) {
-     showDialog(
+    showDialog(
       context: context,
+      barrierDismissible: true,
+      useSafeArea: false,
       builder: (context) => const QuickAddCustomerDialog(),
     ).then((value) {
       if (value == true) ref.invalidate(customersProvider);
@@ -962,6 +1165,118 @@ class _SalesViewState extends ConsumerState<SalesView> {
   }
 }
 
+/// Scrollable dialog for small screens (POS forms).
+class SalesResponsiveDialog extends StatelessWidget {
+  final String title;
+  final Widget child;
+  final List<Widget> actions;
+
+  const SalesResponsiveDialog({
+    super.key,
+    required this.title,
+    required this.child,
+    required this.actions,
+  });
+
+  static Future<T?> show<T>(
+    BuildContext context, {
+    required String title,
+    required Widget child,
+    required List<Widget> actions,
+  }) {
+    return showDialog<T>(
+      context: context,
+      barrierDismissible: true,
+      useSafeArea: false,
+      builder: (_) => SalesResponsiveDialog(
+        title: title,
+        child: child,
+        actions: actions,
+      ),
+    );
+  }
+
+  static EdgeInsets fieldScrollPadding(BuildContext context) {
+    return EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom + 160);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final keyboard = media.viewInsets.bottom;
+    final topSafe = media.padding.top;
+    final screenH = media.size.height;
+    final screenW = media.size.width;
+    final keyboardOpen = keyboard > 0;
+    // When keyboard is open, pin form to top of visible area so all fields stay reachable via scroll.
+    final maxHeight = screenH - topSafe - keyboard - (keyboardOpen ? 12 : 48);
+
+    return Material(
+      type: MaterialType.transparency,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          16,
+          keyboardOpen ? topSafe + 8 : 24,
+          16,
+          keyboard + 16,
+        ),
+        child: Align(
+          alignment: keyboardOpen ? Alignment.topCenter : Alignment.center,
+          child: Material(
+            elevation: 8,
+            shadowColor: Colors.black26,
+            borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
+            color: Theme.of(context).dialogTheme.backgroundColor ?? Theme.of(context).colorScheme.surface,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 440,
+                maxHeight: maxHeight.clamp(260.0, screenH * 0.92),
+              ),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    child,
+                    const SizedBox(height: 16),
+                    Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: actions,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class QuickAddCustomerDialog extends ConsumerStatefulWidget {
   const QuickAddCustomerDialog({super.key});
 
@@ -973,62 +1288,90 @@ class _QuickAddCustomerDialogState extends ConsumerState<QuickAddCustomerDialog>
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _phoneFocus = FocusNode();
   bool _isLoading = false;
   String? _errorMsg;
 
   @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _phoneFocus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Macmiil Cusub'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_errorMsg != null)
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  margin: const EdgeInsets.only(bottom: 8),
-                  color: AppColors.error.withOpacity(0.1),
-                  child: Text(_errorMsg!, style: const TextStyle(color: AppColors.error, fontSize: 12)),
+    return SalesResponsiveDialog(
+      title: 'Macmiil Cusub',
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_errorMsg != null)
+              Container(
+                padding: const EdgeInsets.all(8),
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              TextFormField(
-                controller: _nameController, 
-                decoration: const InputDecoration(labelText: 'Magaca Macmiilka'),
-                validator: (v) => v!.isEmpty ? 'Fadlan gali magaca' : null,
+                child: Text(
+                  _errorMsg!,
+                  style: const TextStyle(color: AppColors.error, fontSize: 12),
+                ),
               ),
             TextFormField(
-              controller: _phoneController, 
+              controller: _nameController,
+              scrollPadding: SalesResponsiveDialog.fieldScrollPadding(context),
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_phoneFocus),
+              decoration: const InputDecoration(labelText: 'Magaca Macmiilka'),
+              validator: (v) => v!.isEmpty ? 'Fadlan gali magaca' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _phoneController,
+              focusNode: _phoneFocus,
+              scrollPadding: SalesResponsiveDialog.fieldScrollPadding(context),
+              textInputAction: TextInputAction.done,
               decoration: const InputDecoration(labelText: 'Telefoonka'),
+              keyboardType: TextInputType.phone,
               validator: (v) => v!.isEmpty ? 'Fadlan gali telefoonka' : null,
             ),
           ],
         ),
       ),
-      ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Jooji')),
         ElevatedButton(
-          onPressed: _isLoading ? null : () async {
-            if (!_formKey.currentState!.validate()) return;
-            setState(() {
-              _isLoading = true;
-              _errorMsg = null;
-            });
-            try {
-              await ref.read(apiServiceProvider).post('/customers', data: {
-                'name': _nameController.text,
-                'phone': _phoneController.text,
-              });
-              if (mounted) Navigator.pop(context, true);
-            } catch (e) {
-              if (mounted) setState(() => _errorMsg = e.toString());
-            } finally {
-               if (mounted) setState(() => _isLoading = false);
-            }
-          },
-          child: _isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Keydi'),
+          onPressed: _isLoading
+              ? null
+              : () async {
+                  if (!_formKey.currentState!.validate()) return;
+                  setState(() {
+                    _isLoading = true;
+                    _errorMsg = null;
+                  });
+                  try {
+                    await ref.read(apiServiceProvider).post('/customers', data: {
+                      'name': _nameController.text.trim(),
+                      'phone': _phoneController.text.trim(),
+                    });
+                    if (mounted) Navigator.pop(context, true);
+                  } catch (e) {
+                    if (mounted) {
+                      setState(() => _errorMsg = ref.read(apiServiceProvider).getErrorMessage(e));
+                    }
+                  } finally {
+                    if (mounted) setState(() => _isLoading = false);
+                  }
+                },
+          child: _isLoading
+              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Keydi'),
         ),
       ],
     );
@@ -1047,39 +1390,70 @@ class _QuickAddProductDialogState extends ConsumerState<QuickAddProductDialog> {
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
+  final _priceFocus = FocusNode();
+  final _stockFocus = FocusNode();
   int? _selectedUnitId;
   bool _isLoading = false;
   String? _errorMsg;
 
   @override
+  void dispose() {
+    _nameController.dispose();
+    _priceController.dispose();
+    _stockController.dispose();
+    _priceFocus.dispose();
+    _stockFocus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Alaab Cusub'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_errorMsg != null)
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  color: AppColors.error.withOpacity(0.1),
-                  child: Text(_errorMsg!, style: const TextStyle(color: AppColors.error, fontSize: 12)),
+    return SalesResponsiveDialog(
+      title: 'Alaab Cusub',
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_errorMsg != null)
+              Container(
+                padding: const EdgeInsets.all(8),
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              TextFormField(
-                controller: _nameController, 
-                decoration: const InputDecoration(labelText: 'Magaca Alaabta'),
-                validator: (v) => v!.isEmpty ? 'Fadlan gali magaca' : null,
+                child: Text(
+                  _errorMsg!,
+                  style: const TextStyle(color: AppColors.error, fontSize: 12),
+                ),
               ),
             TextFormField(
-              controller: _priceController, 
+              controller: _nameController,
+              scrollPadding: SalesResponsiveDialog.fieldScrollPadding(context),
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_priceFocus),
+              decoration: const InputDecoration(labelText: 'Magaca Alaabta'),
+              validator: (v) => v!.isEmpty ? 'Fadlan gali magaca' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _priceController,
+              focusNode: _priceFocus,
+              scrollPadding: SalesResponsiveDialog.fieldScrollPadding(context),
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_stockFocus),
               decoration: const InputDecoration(labelText: 'Qiimaha'),
               keyboardType: TextInputType.number,
               validator: (v) => v!.isEmpty ? 'Fadlan gali qiimaha' : null,
             ),
+            const SizedBox(height: 12),
             TextFormField(
-              controller: _stockController, 
+              controller: _stockController,
+              focusNode: _stockFocus,
+              scrollPadding: SalesResponsiveDialog.fieldScrollPadding(context),
+              textInputAction: TextInputAction.done,
               decoration: const InputDecoration(labelText: 'Tirada (Stock)'),
               keyboardType: TextInputType.number,
               validator: (v) => v!.isEmpty ? 'Fadlan gali tirada' : null,
@@ -1092,31 +1466,36 @@ class _QuickAddProductDialogState extends ConsumerState<QuickAddProductDialog> {
           ],
         ),
       ),
-      ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Jooji')),
         ElevatedButton(
-          onPressed: _isLoading ? null : () async {
-            if (!_formKey.currentState!.validate()) return;
-            setState(() {
-              _isLoading = true;
-              _errorMsg = null;
-            });
-            try {
-              await ref.read(apiServiceProvider).post('/products', data: {
-                'name': _nameController.text,
-                'price': double.parse(_priceController.text),
-                'stock': int.parse(_stockController.text),
-                if (_selectedUnitId != null) 'unit_id': _selectedUnitId,
-              });
-              if (mounted) Navigator.pop(context, true);
-            } catch (e) {
-              if (mounted) setState(() => _errorMsg = e.toString());
-            } finally {
-               if (mounted) setState(() => _isLoading = false);
-            }
-          },
-          child: _isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Keydi'),
+          onPressed: _isLoading
+              ? null
+              : () async {
+                  if (!_formKey.currentState!.validate()) return;
+                  setState(() {
+                    _isLoading = true;
+                    _errorMsg = null;
+                  });
+                  try {
+                    await ref.read(apiServiceProvider).post('/products', data: {
+                      'name': _nameController.text.trim(),
+                      'price': double.parse(_priceController.text),
+                      'stock': int.parse(_stockController.text),
+                      if (_selectedUnitId != null) 'unit_id': _selectedUnitId,
+                    });
+                    if (mounted) Navigator.pop(context, true);
+                  } catch (e) {
+                    if (mounted) {
+                      setState(() => _errorMsg = ref.read(apiServiceProvider).getErrorMessage(e));
+                    }
+                  } finally {
+                    if (mounted) setState(() => _isLoading = false);
+                  }
+                },
+          child: _isLoading
+              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Keydi'),
         ),
       ],
     );

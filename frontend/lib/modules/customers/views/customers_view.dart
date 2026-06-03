@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/customer_provider.dart';
 import '../../../data/models/customer_model.dart';
@@ -99,7 +100,7 @@ class _CustomersViewState extends ConsumerState<CustomersView> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error: $e'),
+              content: Text(ref.read(apiServiceProvider).formatUserError(e)),
               backgroundColor: AppColors.error,
             ),
           );
@@ -147,7 +148,7 @@ class _CustomersViewState extends ConsumerState<CustomersView> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error: $e'),
+              content: Text(ref.read(apiServiceProvider).formatUserError(e)),
               backgroundColor: AppColors.error,
             ),
           );
@@ -264,6 +265,7 @@ class _CustomersViewState extends ConsumerState<CustomersView> {
                           final customer = filtered[index];
                           final hasDebt = customer.debtBalance > 0;
                           return ListTile(
+                            onTap: () => context.push('/customers/${customer.id}'),
                             tileColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -277,38 +279,38 @@ class _CustomersViewState extends ConsumerState<CustomersView> {
                               '${customer.phone ?? '-'} • ${customer.email ?? '-'}',
                               style: const TextStyle(fontSize: 12),
                             ),
-                            trailing: PopupMenuButton<String>(
-                              onSelected: (value) async {
-                                if (value == 'edit') {
-                                  _showEditCustomerDialog(customer);
-                                } else if (value == 'delete') {
-                                  await _deleteCustomer(customer);
-                                }
-                              },
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'edit',
-                                  child: Text('Edit'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      '\$${customer.debtBalance.toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                        color: hasDebt ? AppColors.error : AppColors.textBody,
+                                        fontWeight: hasDebt ? FontWeight.bold : FontWeight.normal,
+                                      ),
+                                    ),
+                                    const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.textLight),
+                                  ],
                                 ),
-                                const PopupMenuItem(
-                                  value: 'delete',
-                                  child: Text('Delete'),
+                                PopupMenuButton<String>(
+                                  onSelected: (value) async {
+                                    if (value == 'edit') {
+                                      _showEditCustomerDialog(customer);
+                                    } else if (value == 'delete') {
+                                      await _deleteCustomer(customer);
+                                    }
+                                  },
+                                  itemBuilder: (context) => const [
+                                    PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                    PopupMenuItem(value: 'delete', child: Text('Delete')),
+                                  ],
+                                  icon: const Icon(Icons.more_vert, size: 18),
                                 ),
                               ],
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    '\$${customer.debtBalance.toStringAsFixed(2)}',
-                                    style: TextStyle(
-                                      color: hasDebt ? AppColors.error : AppColors.textBody,
-                                      fontWeight: hasDebt ? FontWeight.bold : FontWeight.normal,
-                                    ),
-                                  ),
-                                  const Icon(Icons.more_vert, size: 16),
-                                ],
-                              ),
                             ),
                           );
                         },
@@ -316,7 +318,12 @@ class _CustomersViewState extends ConsumerState<CustomersView> {
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, s) => Center(child: Text('Error: $e')),
+                  error: (e, s) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(ref.read(apiServiceProvider).formatUserError(e)),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -490,6 +497,7 @@ class _CustomersViewState extends ConsumerState<CustomersView> {
                           ],
                           rows: filtered.map((customer) {
                             return DataRow(
+                              onSelectChanged: (_) => context.push('/customers/${customer.id}'),
                               cells: [
                                 DataCell(Text(customer.name)),
                                 DataCell(Text(customer.phone ?? '-')),
@@ -513,13 +521,9 @@ class _CustomersViewState extends ConsumerState<CustomersView> {
                                         icon: const Icon(Icons.edit_outlined),
                                         onPressed: () => _showEditCustomerDialog(customer)),
                                     IconButton(
-                                        icon: const Icon(Icons.history),
-                                        onPressed: () {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('Purchase history coming soon in detailed view!'))
-                                          );
-                                        },
-                                        tooltip: 'Purchase History'),
+                                        icon: const Icon(Icons.open_in_new_rounded),
+                                        onPressed: () => context.push('/customers/${customer.id}'),
+                                        tooltip: 'Iibka macmiilka'),
                                   ],
                                 )),
                               ],
@@ -530,7 +534,12 @@ class _CustomersViewState extends ConsumerState<CustomersView> {
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, s) => Center(child: Text('Error: $e')),
+                  error: (e, s) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(ref.read(apiServiceProvider).formatUserError(e)),
+                    ),
+                  ),
                 ),
               ),
             ),

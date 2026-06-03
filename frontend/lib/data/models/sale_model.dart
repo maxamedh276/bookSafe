@@ -11,6 +11,7 @@ class Sale {
   final String paymentStatus;
   final String invoiceNumber;
   final DateTime createdAt;
+  final DateTime saleDate;
   final Customer? customer;
 
   Sale({
@@ -24,24 +25,50 @@ class Sale {
     required this.paymentStatus,
     required this.invoiceNumber,
     required this.createdAt,
+    required this.saleDate,
     this.customer,
   });
 
+  static double _readDouble(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0;
+  }
+
+  static int _readInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString()) ?? 0;
+  }
+
+  static DateTime _readDate(dynamic value, {DateTime? fallback}) {
+    if (value == null) return fallback ?? DateTime.now();
+    try {
+      return DateTime.parse(value.toString());
+    } catch (_) {
+      return fallback ?? DateTime.now();
+    }
+  }
+
   factory Sale.fromJson(Map<String, dynamic> json) {
+    final created = _readDate(json['created_at'] ?? json['createdAt']);
+    final saleDateRaw = json['sale_date'] ?? json['saleDate'];
     return Sale(
-      id: json['id'],
-      customerId: json['customer_id'],
-      totalAmount: double.parse(json['total_amount'].toString()),
-      paidAmount: double.parse(json['paid_amount'].toString()),
-      debtAmount: double.parse(json['debt_amount'].toString()),
-      discount: json['discount'] != null ? double.parse(json['discount'].toString()) : 0.0,
-      description: json['description'],
-      paymentStatus: json['payment_status'],
-      invoiceNumber: json['invoice_number'],
-      createdAt: json['created_at'] != null 
-          ? DateTime.parse(json['created_at']) 
-          : DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      customer: json['Customer'] != null ? Customer.fromJson(json['Customer']) : null,
+      id: _readInt(json['id']),
+      customerId: json['customer_id'] != null ? _readInt(json['customer_id']) : null,
+      totalAmount: _readDouble(json['total_amount'] ?? json['totalAmount']),
+      paidAmount: _readDouble(json['paid_amount'] ?? json['paidAmount']),
+      debtAmount: _readDouble(json['debt_amount'] ?? json['debtAmount']),
+      discount: _readDouble(json['discount']),
+      description: json['description']?.toString(),
+      paymentStatus: (json['payment_status'] ?? json['paymentStatus'] ?? 'paid').toString(),
+      invoiceNumber: (json['invoice_number'] ?? json['invoiceNumber'] ?? '').toString(),
+      createdAt: created,
+      saleDate: saleDateRaw != null ? _readDate(saleDateRaw, fallback: created) : created,
+      customer: json['Customer'] is Map<String, dynamic>
+          ? Customer.fromJson(json['Customer'] as Map<String, dynamic>)
+          : null,
     );
   }
 }

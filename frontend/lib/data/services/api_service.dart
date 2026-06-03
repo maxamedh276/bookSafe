@@ -4,7 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
   //static const String _defaultBaseUrl = 'http://localhost:5000/api';
-  static const String _defaultBaseUrl = 'http://10.150.141.126:5000/api';
+  //  static const String _defaultBaseUrl = 'http://10.150.141.126:5000/api';
+   static const String _defaultBaseUrl = 'http://18.118.145.124:5000/api';
   final Dio _dio;
   final _storage = const FlutterSecureStorage();
 
@@ -63,38 +64,71 @@ class ApiService {
     return await _dio.delete(path);
   }
 
-  String getErrorMessage(Object error) {
-    if (error is DioException) {
-      final data = error.response?.data;
-      if (data is Map<String, dynamic>) {
-        final message = data['message']?.toString();
-        if (message != null && message.isNotEmpty) {
-          return _humanizeMessage(message);
-        }
-      }
+  String getErrorMessage(Object error) => formatUserError(error);
 
-      switch (error.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.sendTimeout:
-        case DioExceptionType.receiveTimeout:
-          return 'Server-ku way dib u dhacaysaa. Fadlan isku day mar kale.';
-        case DioExceptionType.connectionError:
-          return 'Server-ka lama gaari karo. Hubi internet-kaaga ama backend-ka inuu socdo.';
-        case DioExceptionType.badResponse:
-          final status = error.response?.statusCode;
-          if (status == 401) return 'Email-ka ama password-ka waa khalad.';
-          if (status == 403) return 'Ma haysatid ogolaansho inaad gasho qaybtan.';
-          if (status == 404) return 'Wax la raadinayay lama helin.';
-          return 'Server-ku wuxuu soo celiyay jawaab aan la filayn.';
-        case DioExceptionType.cancel:
-          return 'Codsiga waa la joojiyay.';
-        case DioExceptionType.badCertificate:
-        case DioExceptionType.unknown:
-          return 'Khalad shabakadeed ayaa dhacay. Fadlan isku day mar kale.';
+  /// Human-readable message for any error (API, parsing, network).
+  String formatUserError(Object error) {
+    if (error is DioException) {
+      return _formatDioError(error);
+    }
+    if (error is FormatException) {
+      return 'Xogta laga helay way khaldan tahay. Fadlan isku day mar kale.';
+    }
+    if (error is TypeError) {
+      return 'Xogta server-ka ma uusan u iman qaab sax ah. Hubi backend-ka.';
+    }
+    if (error is NoSuchMethodError) {
+      return 'Cilad xog- akhris ah ayaa dhacday. Fadlan hot restart samee ama isku day mar kale.';
+    }
+
+    final raw = error.toString();
+    final lower = raw.toLowerCase();
+    if (lower.contains('nosuchmethoderror') || lower.contains('no such method')) {
+      return 'Cilad xog- akhris ah ayaa dhacday. Fadlan isku day mar kale.';
+    }
+    if (lower.contains('formatexception') || lower.contains('invalid date')) {
+      return 'Taariikhda xogta way khaldan tahay.';
+    }
+    if (lower.contains('socketexception') || lower.contains('connection')) {
+      return 'Server-ka lama gaari karo. Hubi internet-kaaga ama backend-ka.';
+    }
+    if (raw.startsWith('Exception: ') && raw.length < 200) {
+      return raw.replaceFirst('Exception: ', '');
+    }
+    if (raw.length > 160) {
+      return 'Khalad ayaa dhacay. Fadlan isku day mar kale.';
+    }
+    return raw;
+  }
+
+  String _formatDioError(DioException error) {
+    final data = error.response?.data;
+    if (data is Map<String, dynamic>) {
+      final message = data['message']?.toString();
+      if (message != null && message.isNotEmpty) {
+        return _humanizeMessage(message);
       }
     }
 
-    return error.toString();
+    switch (error.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return 'Server-ku way dib u dhacaysaa. Fadlan isku day mar kale.';
+      case DioExceptionType.connectionError:
+        return 'Server-ka lama gaari karo. Hubi internet-kaaga ama backend-ka inuu socdo.';
+      case DioExceptionType.badResponse:
+        final status = error.response?.statusCode;
+        if (status == 401) return 'Email-ka ama password-ka waa khalad.';
+        if (status == 403) return 'Ma haysatid ogolaansho inaad gasho qaybtan.';
+        if (status == 404) return 'Wax la raadinayay lama helin.';
+        return 'Server-ku wuxuu soo celiyay jawaab aan la filayn.';
+      case DioExceptionType.cancel:
+        return 'Codsiga waa la joojiyay.';
+      case DioExceptionType.badCertificate:
+      case DioExceptionType.unknown:
+        return 'Khalad shabakadeed ayaa dhacay. Fadlan isku day mar kale.';
+    }
   }
 
   String _humanizeMessage(String message) {

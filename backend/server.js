@@ -15,8 +15,10 @@ const startServer = async () => {
     await sequelize.sync(syncOptions);
     console.log('✅ Models synchronized...');
 
-    app.listen(PORT, () => {
-        console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+  // 0.0.0.0 required on AWS EC2 so the API is reachable via public IP (not only localhost)
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 Server running on http://0.0.0.0:${PORT} (${process.env.NODE_ENV} mode)`);
+        console.log(`   Public test: http://<EC2_PUBLIC_IP>:${PORT}/`);
     });
 
     // ── Cron Jobs ──────────────────────────────────────────────────────────────

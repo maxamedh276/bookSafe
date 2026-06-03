@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/customer_provider.dart';
+import '../../../data/providers/customer_detail_provider.dart';
 import '../../../data/providers/sale_provider.dart';
 import '../../../data/models/customer_model.dart';
 import '../../../data/models/sale_model.dart';
@@ -406,12 +407,6 @@ class _CustomerDebtDetailBoardState extends ConsumerState<CustomerDebtDetailBoar
     });
   }
 }
-
-final customerHistoryProvider = FutureProvider.family<Map<String, dynamic>, int>((ref, id) async {
-  final api = ref.watch(apiServiceProvider);
-  final response = await api.get('/customers/$id/history');
-  return response.data;
-});
 
 class RecordPaymentDialog extends ConsumerStatefulWidget {
   final Customer customer;

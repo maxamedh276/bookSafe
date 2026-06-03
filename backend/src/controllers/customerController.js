@@ -134,20 +134,66 @@ const getCustomerHistory = async (req, res) => {
     try {
         const Sale = require('../models/Sale');
         const Payment = require('../models/Payment');
+        const { Op } = require('sequelize');
 
         const customerId = req.params.id;
+        const { startDate, endDate } = req.query;
+
+        const parseDayStart = (value) => {
+            const day = String(value).split('T')[0];
+            const [y, m, d] = day.split('-').map(Number);
+            return new Date(y, m - 1, d, 0, 0, 0, 0);
+        };
+
+        const parseDayEnd = (value) => {
+            const day = String(value).split('T')[0];
+            const [y, m, d] = day.split('-').map(Number);
+            return new Date(y, m - 1, d, 23, 59, 59, 999);
+        };
+
+        const saleWhere = {
+            customer_id: customerId,
+            tenant_id: req.user.tenant_id,
+        };
+
+        if (startDate && endDate) {
+            saleWhere.sale_date = {
+                [Op.between]: [parseDayStart(startDate), parseDayEnd(endDate)],
+            };
+        } else if (startDate) {
+            saleWhere.sale_date = { [Op.gte]: parseDayStart(startDate) };
+        } else if (endDate) {
+            saleWhere.sale_date = { [Op.lte]: parseDayEnd(endDate) };
+        }
 
         const sales = await Sale.findAll({
-            where: { customer_id: customerId, tenant_id: req.user.tenant_id },
-            order: [['created_at', 'DESC']]
+            where: saleWhere,
+            order: [['sale_date', 'DESC'], ['created_at', 'DESC']],
         });
+
+        const paymentWhere = {
+            customer_id: customerId,
+            tenant_id: req.user.tenant_id,
+        };
+        if (startDate && endDate) {
+            paymentWhere.payment_date = {
+                [Op.between]: [parseDayStart(startDate), parseDayEnd(endDate)],
+            };
+        }
 
         const payments = await Payment.findAll({
-            where: { customer_id: customerId, tenant_id: req.user.tenant_id },
-            order: [['created_at', 'DESC']]
+            where: paymentWhere,
+            order: [['payment_date', 'DESC'], ['created_at', 'DESC']],
         });
 
-        res.json({ sales, payments });
+        const summary = {
+            totalSales: sales.length,
+            totalAmount: sales.reduce((sum, s) => sum + parseFloat(s.total_amount || 0), 0),
+            totalPaid: sales.reduce((sum, s) => sum + parseFloat(s.paid_amount || 0), 0),
+            totalDebt: sales.reduce((sum, s) => sum + parseFloat(s.debt_amount || 0), 0),
+        };
+
+        res.json({ sales, payments, summary });
     } catch (error) {
         res.status(500).json({ message: 'Server error while loading customer history.' });
     }
