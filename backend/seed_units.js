@@ -27,6 +27,8 @@ const units = [
     { name: 'Bag', shortName: 'bag' },
     { name: 'Sack', shortName: 'sack' },
     { name: 'Bucket', shortName: 'bkt' },
+    { name: 'Handful', shortName: 'thm' },   // Thumun — qiyaas gacanta
+    { name: 'Quarter Kilo', shortName: 'qkg' },
 ];
 
 const syncAndSeed = async () => {

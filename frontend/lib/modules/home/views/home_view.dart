@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/modern_ui.dart';
 import '../../../data/providers/dashboard_provider.dart';
 
 class HomeView extends ConsumerWidget {
@@ -26,17 +27,15 @@ class HomeView extends ConsumerWidget {
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(), // Important for pull-to-refresh
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Maanta & Dashboard',
-              style: Theme.of(context).textTheme.headlineMedium,
+            const ModernPageHeader(
+              title: 'Dashboard',
+              subtitle: 'Guud ahaan xaaladda ganacsigaaga ee maanta.',
             ),
-            const SizedBox(height: 8),
-            const Text('Guud ahaan xaaladda ganacsigaaga ee maanta.'),
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
           
           // Summary Cards (Today)
           LayoutBuilder(
@@ -420,67 +419,11 @@ class HomeView extends ConsumerWidget {
     required Color color,
   }) {
     return Expanded(
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textHeading,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: AppColors.textLight,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      child: ModernStatCard(title: title, value: value, icon: icon, color: color),
     );
   }
 
   Widget _buildSection(BuildContext context, {required String title, required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textHeading,
-            ),
-          ),
-          const SizedBox(height: 16),
-          child,
-        ],
-      ),
-    );
+    return ModernSection(title: title, child: child);
   }
 }

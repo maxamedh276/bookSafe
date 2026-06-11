@@ -1,11 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:state_notifier/state_notifier.dart';
 import '../models/product_model.dart';
+import '../../core/utils/unit_utils.dart';
 
 class CartItem {
   final Product product;
-  int quantity;
-  final double price; // price used for this sale line
+  double quantity;
+  final double price;
 
   CartItem({
     required this.product,
@@ -14,13 +15,14 @@ class CartItem {
   }) : price = price ?? product.price;
 
   double get total => price * quantity;
+  String get unitLabel => product.unitName ?? '';
 }
 
 class CartNotifier extends StateNotifier<List<CartItem>> {
   CartNotifier() : super([]);
 
-  void addToCart(Product product, {int quantity = 1}) {
-    final qty = quantity < 1 ? 1 : quantity;
+  void addToCart(Product product, {double quantity = 1}) {
+    final qty = quantity <= 0 ? 1.0 : quantity;
     final existingIndex = state.indexWhere((item) => item.product.id == product.id);
     if (existingIndex != -1) {
       final newState = List<CartItem>.from(state);
@@ -31,17 +33,15 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
     }
   }
 
-  /// Add [amount] to current line quantity (used when user enters bulk qty then taps +).
-  void incrementQuantityBy(int productId, int amount) {
-    final add = amount < 1 ? 1 : amount;
+  void incrementQuantityBy(int productId, double amount) {
+    final add = amount <= 0 ? 1.0 : amount;
     final index = state.indexWhere((i) => i.product.id == productId);
     if (index == -1) return;
     updateQuantity(productId, state[index].quantity + add);
   }
 
-  /// Subtract [amount] from current line quantity (min 0 removes line).
-  void decrementQuantityBy(int productId, int amount) {
-    final sub = amount < 1 ? 1 : amount;
+  void decrementQuantityBy(int productId, double amount) {
+    final sub = amount <= 0 ? 1.0 : amount;
     final index = state.indexWhere((i) => i.product.id == productId);
     if (index == -1) return;
     updateQuantity(productId, state[index].quantity - sub);
@@ -51,7 +51,7 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
     state = state.where((item) => item.product.id != productId).toList();
   }
 
-  void updateQuantity(int productId, int quantity) {
+  void updateQuantity(int productId, double quantity) {
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
@@ -59,13 +59,12 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
     state = [
       for (final item in state)
         if (item.product.id == productId)
-          CartItem(product: item.product, quantity: quantity)
+          CartItem(product: item.product, quantity: quantity, price: item.price)
         else
           item,
     ];
   }
 
-  /// Update unit price for a specific cart line (e.g. discount or custom price).
   void updatePrice(int productId, double price) {
     if (price <= 0) return;
     state = [
@@ -84,6 +83,8 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
   void clear() => state = [];
 
   double get totalAmount => state.fold(0, (sum, item) => sum + item.total);
+
+  double qtyStepFor(Product product) => defaultQtyStep(product.unitName);
 }
 
 final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>((ref) {

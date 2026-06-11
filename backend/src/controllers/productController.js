@@ -15,7 +15,7 @@ const getProducts = async (req, res) => {
 
         const products = await Product.findAll({
             where,
-            include: [{ model: Unit, as: 'unit', attributes: ['id', 'name', 'short_name'] }],
+            include: [{ model: Unit, as: 'unit', attributes: ['id', 'name', 'shortName'] }],
             order: [['name', 'ASC']],
         });
 
@@ -53,7 +53,11 @@ const createProduct = async (req, res) => {
             unit_id: unit_id || null
         });
 
-        res.status(201).json(product);
+        const productWithUnit = await Product.findByPk(product.id, {
+            include: [{ model: Unit, as: 'unit', attributes: ['id', 'name', 'shortName'] }]
+        });
+
+        res.status(201).json(productWithUnit);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -80,7 +84,7 @@ const updateProduct = async (req, res) => {
 
             const updatedProduct = await product.save();
             const productWithUnit = await Product.findByPk(updatedProduct.id, {
-                include: [{ model: Unit, as: 'unit', attributes: ['id', 'name', 'short_name'] }]
+                include: [{ model: Unit, as: 'unit', attributes: ['id', 'name', 'shortName'] }]
             });
             res.json(productWithUnit);
         } else {

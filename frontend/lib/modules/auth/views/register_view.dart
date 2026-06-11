@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/cloud_sky_background.dart';
+import '../../../core/widgets/modern_ui.dart';
 import '../../../data/providers/auth_provider.dart';
 
 class RegisterView extends ConsumerStatefulWidget {
@@ -72,22 +74,37 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     });
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Is-diiwaangeli'),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textHeading),
-          onPressed: () => context.go('/login'),
-        ),
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32.0),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Form(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CloudSkyBackground(),
+          SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F3D6E)),
+                        onPressed: () => context.go('/login'),
+                      ),
+                      const Text(
+                        'Is-diiwaangeli',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F3D6E)),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 600),
+                        padding: const EdgeInsets.all(28),
+                        decoration: AppDecor.glassCard(radius: AppDecor.radiusLg),
+                        child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,9 +212,15 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                   ),
                 ],
               ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }

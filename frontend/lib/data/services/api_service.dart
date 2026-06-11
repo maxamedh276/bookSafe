@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
-  //static const String _defaultBaseUrl = 'http://localhost:5000/api';
-  //  static const String _defaultBaseUrl = 'http://10.150.141.126:5000/api';
-   static const String _defaultBaseUrl = 'http://18.118.145.124:5000/api';
+  // static const String _defaultBaseUrl = 'http://localhost:5000/api';
+     static const String _defaultBaseUrl = 'http://10.142.20.126:5000/api';
+    // static const String _defaultBaseUrl = 'http://18.118.145.124:5000/api';
   final Dio _dio;
   final _storage = const FlutterSecureStorage();
 

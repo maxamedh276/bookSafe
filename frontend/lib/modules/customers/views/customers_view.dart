@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/modern_ui.dart';
 import '../../../data/providers/customer_provider.dart';
 import '../../../data/models/customer_model.dart';
 import '../../../data/services/api_service.dart';
@@ -172,66 +173,21 @@ class _CustomersViewState extends ConsumerState<CustomersView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'Macaamiisha',
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 4),
-                        Text('Maamul macluumaadka macaamiishaada.', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
-                      ],
-                    ),
-                    IconButton(
-                      onPressed: _showAddCustomerDialog,
-                      icon: const Icon(Icons.person_add_alt_1, color: AppColors.primary),
-                      tooltip: 'Macmiil Cusub',
-                    ),
-                  ],
+              ModernPageHeader(
+                title: 'Macaamiisha',
+                subtitle: 'Maamul macluumaadka macaamiishaada.',
+                trailing: ModernIconButton(
+                  icon: Icons.person_add_alt_1_rounded,
+                  onPressed: _showAddCustomerDialog,
+                  light: true,
                 ),
               ),
-              const SizedBox(height: 16),
-              // Search Field for Mobile
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    onChanged: (v) => setState(() => searchQuery = v),
-                    decoration: InputDecoration(
-                      hintText: 'Magac ama Taleefan ku dhex raadi...',
-                      hintStyle: const TextStyle(fontSize: 13, color: AppColors.textLight),
-                      prefixIcon: const Icon(Icons.search, color: AppColors.primary, size: 20),
-                      suffixIcon: searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear, size: 18),
-                              onPressed: () => setState(() => searchQuery = ''),
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                  ),
-                ),
+              ModernSearchField(
+                hint: 'Magac ama taleefan ku dhex raadi...',
+                onChanged: (v) => setState(() => searchQuery = v),
+                showClear: searchQuery.isNotEmpty,
+                onClear: () => setState(() => searchQuery = ''),
               ),
-              const SizedBox(height: 8),
               Expanded(
                 child: customersAsync.when(
                   data: (customers) {
@@ -340,65 +296,22 @@ class _CustomersViewState extends ConsumerState<CustomersView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Macaamiisha (Customers)',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    const Text('Maamul macluumaadka macaamiishaada.'),
-                  ],
-                ),
-                ElevatedButton.icon(
-                  onPressed: _showAddCustomerDialog,
-                  icon: const Icon(Icons.person_add_alt_1),
-                  label: const Text('Macmiil Cusub'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-
-            // Search Bar
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-                border: Border.all(color: Colors.grey.withOpacity(0.1)),
-              ),
-              child: TextField(
-                onChanged: (v) => setState(() => searchQuery = v),
-                decoration: InputDecoration(
-                  hintText: 'Search by name or phone...',
-                  hintStyle: const TextStyle(color: AppColors.textLight),
-                  prefixIcon: const Icon(Icons.search, color: AppColors.primary),
-                  suffixIcon: searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () => setState(() => searchQuery = ''),
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
-                ),
+            ModernPageHeader(
+              title: 'Macaamiisha',
+              subtitle: 'Maamul macluumaadka macaamiishaada.',
+              trailing: ModernIconButton(
+                icon: Icons.person_add_alt_1_rounded,
+                onPressed: _showAddCustomerDialog,
+                light: true,
               ),
             ),
-            
-            const SizedBox(height: 24),
+            ModernSearchField(
+              hint: 'Magac ama taleefan ku dhex raadi...',
+              onChanged: (v) => setState(() => searchQuery = v),
+              showClear: searchQuery.isNotEmpty,
+              onClear: () => setState(() => searchQuery = ''),
+            ),
+            const SizedBox(height: 8),
 
             // Customers list/table
             Expanded(

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/modern_ui.dart';
 import '../../../data/providers/product_provider.dart';
 import '../../../data/models/product_model.dart';
 import '../../../data/services/api_service.dart';
+import '../../../core/utils/unit_utils.dart';
 import '../../../core/widgets/unit_dropdown.dart';
 
 class InventoryView extends ConsumerStatefulWidget {
@@ -62,7 +64,7 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                 TextField(
                   controller: stockController,
                   decoration: const InputDecoration(labelText: 'Stock'),
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 ),
                 const SizedBox(height: 16),
                 UnitDropdown(
@@ -95,7 +97,7 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
           'name': nameController.text,
           'sku': skuController.text,
           'price': double.tryParse(priceController.text) ?? product.price,
-          'stock': int.tryParse(stockController.text) ?? product.stock,
+          'stock': parseQuantityInput(stockController.text),
           'unit_id': selectedUnitId,
         });
         ref.invalidate(productsProvider);
@@ -188,56 +190,16 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'Bakhaarka',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 4),
-                    Text('Maamul alaabtaada iyo stock-gaaga.', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
-                  ],
-                ),
+              const ModernPageHeader(
+                title: 'Bakhaarka',
+                subtitle: 'Maamul alaabtaada iyo stock-gaaga.',
               ),
-              const SizedBox(height: 16),
-              // Search Field for Mobile
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    onChanged: (v) => setState(() => searchQuery = v),
-                    decoration: InputDecoration(
-                      hintText: 'Alaab ama SKU ku dhex raadi...',
-                      hintStyle: const TextStyle(fontSize: 13, color: AppColors.textLight),
-                      prefixIcon: const Icon(Icons.search, color: AppColors.primary, size: 20),
-                      suffixIcon: searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear, size: 18),
-                              onPressed: () => setState(() => searchQuery = ''),
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                  ),
-                ),
+              ModernSearchField(
+                hint: 'Alaab ama SKU ku dhex raadi...',
+                onChanged: (v) => setState(() => searchQuery = v),
+                showClear: searchQuery.isNotEmpty,
+                onClear: () => setState(() => searchQuery = ''),
               ),
-              const SizedBox(height: 8),
               Expanded(
                 child: productsAsync.when(
                   data: (products) {
@@ -287,12 +249,14 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                               child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary, size: 22),
                             ),
                             title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                            subtitle: Text('SKU: ${p.sku ?? "-"} • \$${p.price.toStringAsFixed(2)}${p.unitName != null ? ' per ${p.unitName}' : ''}'),
+                            subtitle: Text(
+                              'SKU: ${p.sku ?? "-"} • ${formatPricePerUnit(p.price, p.unitName)}',
+                            ),
                             trailing: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Text('${p.stock}',
+                                Text(formatStock(p.stock, p.unitName),
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: isOutOfStock ? AppColors.error : (isLowStock ? AppColors.warning : AppColors.success),
@@ -434,7 +398,7 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                             title: Text(product.name,
                                 style: const TextStyle(fontWeight: FontWeight.w600)),
                             subtitle: Text(
-                              'SKU: ${product.sku ?? '-'} • Qiime: \$${product.price} • Stock: ${product.stock} ${product.unitName ?? ''}',
+                              'SKU: ${product.sku ?? '-'} • ${formatPricePerUnit(product.price, product.unitName)} • Stock: ${formatStock(product.stock, product.unitName)}',
                               style: const TextStyle(fontSize: 12),
                             ),
                             trailing: Container(
@@ -501,7 +465,7 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                                 DataCell(Text(product.sku ?? '-')),
                                 DataCell(Text('\$${product.price}')),
                                 DataCell(Text(product.unitName ?? '-')),
-                                DataCell(Text('${product.stock}')),
+                                DataCell(Text(formatStock(product.stock, product.unitName))),
                                 DataCell(
                                   Container(
                                     padding:
@@ -577,7 +541,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
           'name': _nameController.text,
           'sku': _skuController.text,
           'price': double.parse(_priceController.text),
-          'stock': int.parse(_stockController.text),
+          'stock': parseQuantityInput(_stockController.text),
           if (_selectedUnitId != null) 'unit_id': _selectedUnitId,
         });
         Navigator.pop(context, true);
@@ -622,8 +586,8 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _priceController,
-                        decoration: const InputDecoration(labelText: 'Qiimaha (\$)'),
-                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Qiimaha hal unug (\$)'),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         validator: (v) => v!.isEmpty ? 'Gali qiimaha' : null,
                       ),
                     ),
@@ -632,7 +596,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                       child: TextFormField(
                         controller: _stockController,
                         decoration: const InputDecoration(labelText: 'Tirada (Stock)'),
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         validator: (v) => v!.isEmpty ? 'Gali tirada' : null,
                       ),
                     ),

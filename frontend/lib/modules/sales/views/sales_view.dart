@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/modern_ui.dart';
 import '../../../data/providers/product_provider.dart';
 import '../../../data/providers/cart_provider.dart';
 import '../../../data/providers/customer_provider.dart';
@@ -11,6 +12,9 @@ import '../../../core/services/receipt_service.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../core/services/offline_sync_service.dart';
 import '../../../core/widgets/unit_dropdown.dart';
+import '../../../core/widgets/pos_quantity_sheet.dart';
+import '../../../core/widgets/quantity_select_field.dart';
+import '../../../core/utils/unit_utils.dart';
 
 class SalesView extends ConsumerStatefulWidget {
   const SalesView({super.key});
@@ -25,52 +29,14 @@ class _SalesViewState extends ConsumerState<SalesView> {
   String paymentStatus = 'paid'; // 'paid' or 'credit'
   double discount = 0.0;
   final descriptionController = TextEditingController();
-  /// Qty to add when tapping a product from the grid (e.g. 50 at once).
-  final _defaultAddQtyController = TextEditingController(text: '1');
-  final Map<int, TextEditingController> _cartQtyControllers = {};
-  final Map<int, FocusNode> _cartQtyFocusNodes = {};
 
   @override
   void dispose() {
     descriptionController.dispose();
-    _defaultAddQtyController.dispose();
-    for (final c in _cartQtyControllers.values) {
-      c.dispose();
-    }
-    for (final n in _cartQtyFocusNodes.values) {
-      n.dispose();
-    }
     super.dispose();
   }
 
-  TextEditingController _cartQtyControllerFor(int productId) {
-    return _cartQtyControllers.putIfAbsent(
-      productId,
-      () => TextEditingController(text: '1'),
-    );
-  }
-
-  FocusNode _cartQtyFocusFor(int productId) {
-    return _cartQtyFocusNodes.putIfAbsent(productId, () => FocusNode());
-  }
-
-  /// Keep qty field in sync with cart unless user is typing in it.
-  void _syncCartQtyField(int productId, int quantity) {
-    if (_cartQtyFocusFor(productId).hasFocus) return;
-    _setCartQtyFieldText(productId, quantity);
-  }
-
-  void _setCartQtyFieldText(int productId, int quantity) {
-    final c = _cartQtyControllerFor(productId);
-    final text = quantity.toString();
-    if (c.text == text) return;
-    c.value = TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
-    );
-  }
-
-  int _lineQty(int productId) {
+  double _lineQty(int productId) {
     for (final item in ref.read(cartProvider)) {
       if (item.product.id == productId) return item.quantity;
     }
@@ -78,40 +44,35 @@ class _SalesViewState extends ConsumerState<SalesView> {
   }
 
   void _incrementLineQty(int productId) {
-    final step = _parsedDefaultAddQty();
+    final product = ref.read(cartProvider).firstWhere((i) => i.product.id == productId).product;
+    final step = defaultQtyStep(product.unitName);
     final newQty = _lineQty(productId) + step;
     ref.read(cartProvider.notifier).updateQuantity(productId, newQty);
-    _setCartQtyFieldText(productId, newQty);
-    _cartQtyFocusFor(productId).unfocus();
   }
 
   void _decrementLineQty(int productId) {
-    final step = _parsedDefaultAddQty();
+    final product = ref.read(cartProvider).firstWhere((i) => i.product.id == productId).product;
+    final step = defaultQtyStep(product.unitName);
     final newQty = _lineQty(productId) - step;
     if (newQty <= 0) {
       ref.read(cartProvider.notifier).removeFromCart(productId);
     } else {
       ref.read(cartProvider.notifier).updateQuantity(productId, newQty);
-      _setCartQtyFieldText(productId, newQty);
     }
-    _cartQtyFocusFor(productId).unfocus();
   }
 
-  void _applyCartQtyFromField(int productId) {
-    final raw = _cartQtyControllerFor(productId).text.trim();
-    if (raw.isEmpty) return;
-    final n = int.tryParse(raw);
-    if (n == null) return;
-    ref.read(cartProvider.notifier).updateQuantity(productId, n);
+  Future<void> _addProductToCart(Product product) async {
+    final qty = await showPosQuantitySheet(context, product);
+    if (qty != null && qty > 0) {
+      ref.read(cartProvider.notifier).addToCart(product, quantity: qty);
+    }
   }
 
-  int _parsedDefaultAddQty() {
-    final n = int.tryParse(_defaultAddQtyController.text.trim());
-    return (n == null || n < 1) ? 1 : n;
-  }
-
-  void _addProductToCart(Product product) {
-    ref.read(cartProvider.notifier).addToCart(product, quantity: _parsedDefaultAddQty());
+  Future<void> _showProductQtySheet(Product product) async {
+    final qty = await showPosQuantitySheet(context, product);
+    if (qty != null && qty > 0) {
+      ref.read(cartProvider.notifier).addToCart(product, quantity: qty);
+    }
   }
 
   @override
@@ -119,11 +80,6 @@ class _SalesViewState extends ConsumerState<SalesView> {
     final productsAsync = ref.watch(productsProvider);
     final customersAsync = ref.watch(customersProvider);
     final cart = ref.watch(cartProvider);
-    ref.listen<List<CartItem>>(cartProvider, (_, next) {
-      for (final item in next) {
-        _syncCartQtyField(item.product.id, item.quantity);
-      }
-    });
     final subtotal = cart.fold<double>(0, (sum, item) => sum + item.total);
     final totalAmount = (subtotal - discount) > 0 ? (subtotal - discount) : 0.0;
 
@@ -151,9 +107,12 @@ class _SalesViewState extends ConsumerState<SalesView> {
           final Widget productsSection = Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Top Action Bar
+                    const ModernPageHeader(
+                      title: 'Iibka & POS',
+                      subtitle: 'Dooro alaab, ku dar cart-ka, gudbi iibka.',
+                    ),
                     Padding(
-                      padding: const EdgeInsets.all(24.0),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                       child: Row(
                         children: [
                           Expanded(
@@ -401,34 +360,24 @@ class _SalesViewState extends ConsumerState<SalesView> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Text('Tirada marka la daro:', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
-                          const SizedBox(width: 8),
-                          SizedBox(
-                            width: 72,
-                            child: TextField(
-                              controller: _defaultAddQtyController,
-                              keyboardType: TextInputType.number,
-                              textAlign: TextAlign.center,
-                              decoration: InputDecoration(
-                                isDense: true,
-                                hintText: '1',
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.touch_app_outlined, size: 16, color: AppColors.primary),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Guji alaab si aad u doorato tirada (Nus kilo, Rubac, iwm.)',
+                                style: TextStyle(fontSize: 11, color: AppColors.textLight),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 6),
-                                const Expanded(
-                                  child: Text(
-                                    'Guji alaab = ku dar; +/- = kordhi/ka jar tiradan',
-                                    style: TextStyle(fontSize: 10, color: AppColors.textLight),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                        ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 12),
                       if (cart.isEmpty)
@@ -514,7 +463,7 @@ class _SalesViewState extends ConsumerState<SalesView> {
                             Tab(
                               icon: Badge(
                                 isLabelVisible: cart.isNotEmpty,
-                                label: Text('${cart.fold<int>(0, (sum, i) => sum + i.quantity)}'),
+                                label: Text('${cart.length}'),
                                 child: const Icon(Icons.shopping_cart_outlined),
                               ),
                               text: 'Cart-ka',
@@ -639,12 +588,13 @@ class _SalesViewState extends ConsumerState<SalesView> {
                                             title: Text(product.name,
                                                 style: const TextStyle(fontWeight: FontWeight.w600)),
                                             subtitle: Text(
-                                              'Qiime: \$${product.price}  •  Stock: ${product.stock}',
+                                              '${formatPricePerUnit(product.price, product.unitName)}  •  Stock: ${formatStock(product.stock, product.unitName)}',
                                               style: const TextStyle(fontSize: 12),
                                             ),
                                             trailing: const Icon(Icons.add_shopping_cart_outlined,
                                                 color: AppColors.primary),
                                             onTap: () => _addProductToCart(product),
+                                            onLongPress: () => _showProductQtySheet(product),
                                           );
                                         },
                                       );
@@ -804,8 +754,8 @@ class _SalesViewState extends ConsumerState<SalesView> {
   }
 
   Widget _buildCartItem(CartItem item) {
-    _syncCartQtyField(item.product.id, item.quantity);
-    final step = _parsedDefaultAddQty();
+    final step = defaultQtyStep(item.product.unitName);
+    final unit = item.product.unitName;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -830,7 +780,16 @@ class _SalesViewState extends ConsumerState<SalesView> {
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
+          QuantitySelectField(
+            compact: true,
+            value: item.quantity,
+            unitShortName: unit,
+            label: 'Tirada',
+            onChanged: (qty) =>
+                ref.read(cartProvider.notifier).updateQuantity(item.product.id, qty),
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
               Flexible(
@@ -847,7 +806,7 @@ class _SalesViewState extends ConsumerState<SalesView> {
                       children: [
                         Flexible(
                           child: Text(
-                            '\$${item.price.toStringAsFixed(2)}',
+                            formatPricePerUnit(item.price, unit),
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: AppColors.primary,
@@ -870,26 +829,7 @@ class _SalesViewState extends ConsumerState<SalesView> {
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 icon: const Icon(Icons.remove_circle_outline, size: 22, color: AppColors.error),
                 onPressed: () => _decrementLineQty(item.product.id),
-                tooltip: 'Ka jar $step',
-              ),
-              SizedBox(
-                width: 72,
-                child: TextField(
-                  controller: _cartQtyControllerFor(item.product.id),
-                  focusNode: _cartQtyFocusFor(item.product.id),
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    labelText: 'Tirada',
-                    labelStyle: const TextStyle(fontSize: 9),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  onChanged: (_) => _applyCartQtyFromField(item.product.id),
-                  onSubmitted: (_) => _applyCartQtyFromField(item.product.id),
-                ),
+                tooltip: 'Ka jar ${formatQuantity(step, unit)}',
               ),
               IconButton(
                 visualDensity: VisualDensity.compact,
@@ -897,7 +837,7 @@ class _SalesViewState extends ConsumerState<SalesView> {
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 icon: const Icon(Icons.add_circle_outline, size: 22, color: AppColors.success),
                 onPressed: () => _incrementLineQty(item.product.id),
-                tooltip: 'Ku dar $step',
+                tooltip: 'Ku dar ${formatQuantity(step, unit)}',
               ),
             ],
           ),
@@ -918,7 +858,7 @@ class _SalesViewState extends ConsumerState<SalesView> {
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(
-              labelText: 'Qiimaha hal xabbo',
+              labelText: 'Qiimaha hal unug (per unit)',
             ),
           ),
           actions: [
@@ -972,6 +912,7 @@ class _SalesViewState extends ConsumerState<SalesView> {
   Widget _buildProductCard(Product product) {
     return InkWell(
       onTap: () => _addProductToCart(product),
+      onLongPress: () => _showProductQtySheet(product),
       child: Card(
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -1000,13 +941,23 @@ class _SalesViewState extends ConsumerState<SalesView> {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
+              if (product.hasUnit)
+                Text(
+                  formatUnitBadge(product.unitName, unitFullName: product.unitFullName),
+                  style: const TextStyle(fontSize: 10, color: AppColors.textLight),
+                )
+              else
+                const Text(
+                  'Unug lama doorin — ku dar Inventory',
+                  style: TextStyle(fontSize: 10, color: AppColors.warning),
+                ),
               const SizedBox(height: 4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Flexible(
                     child: Text(
-                      '\$${product.price}',
+                      formatPricePerUnit(product.price, product.unitName),
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppColors.primary, 
@@ -1023,7 +974,7 @@ class _SalesViewState extends ConsumerState<SalesView> {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      'Stock: ${product.stock}',
+                      formatStock(product.stock, product.unitName),
                       style: TextStyle(
                         color: product.stock < 5 ? AppColors.error : AppColors.success, 
                         fontSize: 9, 
@@ -1084,7 +1035,7 @@ class _SalesViewState extends ConsumerState<SalesView> {
         'items': cartItems.map((item) => {
           'product_id': item.product.id,
           'quantity': item.quantity,
-          'price': item.product.price,
+          'price': item.price,
         }).toList(),
         'discount': discount,
         'description': descriptionController.text,
@@ -1093,8 +1044,8 @@ class _SalesViewState extends ConsumerState<SalesView> {
       // Build receipt items regardless of online/offline
       final receiptItems = cartItems.map((item) => {
         'name': item.product.name,
-        'quantity': item.quantity,
-        'price': item.product.price.toStringAsFixed(2),
+        'quantity': formatQuantityBilingual(item.quantity, item.product.unitName),
+        'price': item.price.toStringAsFixed(2),
         'subtotal': item.total.toStringAsFixed(2),
       }).toList();
 
@@ -1444,8 +1395,8 @@ class _QuickAddProductDialogState extends ConsumerState<QuickAddProductDialog> {
               scrollPadding: SalesResponsiveDialog.fieldScrollPadding(context),
               textInputAction: TextInputAction.next,
               onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_stockFocus),
-              decoration: const InputDecoration(labelText: 'Qiimaha'),
-              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Qiimaha hal unug (per unit)'),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               validator: (v) => v!.isEmpty ? 'Fadlan gali qiimaha' : null,
             ),
             const SizedBox(height: 12),
@@ -1455,7 +1406,7 @@ class _QuickAddProductDialogState extends ConsumerState<QuickAddProductDialog> {
               scrollPadding: SalesResponsiveDialog.fieldScrollPadding(context),
               textInputAction: TextInputAction.done,
               decoration: const InputDecoration(labelText: 'Tirada (Stock)'),
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               validator: (v) => v!.isEmpty ? 'Fadlan gali tirada' : null,
             ),
             const SizedBox(height: 16),
@@ -1481,7 +1432,7 @@ class _QuickAddProductDialogState extends ConsumerState<QuickAddProductDialog> {
                     await ref.read(apiServiceProvider).post('/products', data: {
                       'name': _nameController.text.trim(),
                       'price': double.parse(_priceController.text),
-                      'stock': int.parse(_stockController.text),
+                      'stock': parseQuantityInput(_stockController.text),
                       if (_selectedUnitId != null) 'unit_id': _selectedUnitId,
                     });
                     if (mounted) Navigator.pop(context, true);

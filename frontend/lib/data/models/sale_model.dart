@@ -1,4 +1,5 @@
 import 'customer_model.dart';
+import 'sale_item_model.dart';
 
 class Sale {
   final int id;
@@ -13,6 +14,7 @@ class Sale {
   final DateTime createdAt;
   final DateTime saleDate;
   final Customer? customer;
+  final List<SaleItem> items;
 
   Sale({
     required this.id,
@@ -27,7 +29,12 @@ class Sale {
     required this.createdAt,
     required this.saleDate,
     this.customer,
+    this.items = const [],
   });
+
+  bool get isFullyPaid => debtAmount <= 0;
+  bool get isPartiallyPaid => paidAmount > 0 && debtAmount > 0;
+  bool get hasAnyPayment => paidAmount > 0;
 
   static double _readDouble(dynamic value) {
     if (value == null) return 0;
@@ -68,7 +75,22 @@ class Sale {
       saleDate: saleDateRaw != null ? _readDate(saleDateRaw, fallback: created) : created,
       customer: json['Customer'] is Map<String, dynamic>
           ? Customer.fromJson(json['Customer'] as Map<String, dynamic>)
-          : null,
+          : (json['customer'] is Map<String, dynamic>
+              ? Customer.fromJson(json['customer'] as Map<String, dynamic>)
+              : null),
+      items: _parseItems(json['items']),
     );
+  }
+
+  static List<SaleItem> _parseItems(dynamic raw) {
+    if (raw is! List) return [];
+    return raw
+        .map((e) {
+          if (e is Map<String, dynamic>) return SaleItem.fromJson(e);
+          if (e is Map) return SaleItem.fromJson(Map<String, dynamic>.from(e));
+          return null;
+        })
+        .whereType<SaleItem>()
+        .toList();
   }
 }

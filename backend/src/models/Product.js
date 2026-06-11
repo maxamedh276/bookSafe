@@ -39,7 +39,7 @@ const Product = sequelize.define('Product', {
         defaultValue: 0.00,
     },
     stock: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.DECIMAL(12, 3),
         allowNull: false,
         defaultValue: 0,
     },
@@ -47,7 +47,7 @@ const Product = sequelize.define('Product', {
         type: DataTypes.STRING(50),
     },
     total_quantity: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.DECIMAL(12, 3),
         defaultValue: 0,
     },
 }, {

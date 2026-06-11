@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/modern_ui.dart';
 import '../../../data/services/api_service.dart';
 
 class ReportsView extends ConsumerStatefulWidget {
@@ -141,25 +142,23 @@ class _ReportsViewState extends ConsumerState<ReportsView>
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // Header with controls
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final isNarrow = constraints.maxWidth < 500;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const ModernPageHeader(
+                      title: 'Warbixinada',
+                      subtitle: 'Analytics, iibka, alaabta, iyo deynta — xog ku saleysan.',
+                    ),
+                    const SizedBox(height: 12),
                     if (isNarrow)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Warbixinada & Analytics',
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          const SizedBox(height: 12),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
@@ -199,14 +198,8 @@ class _ReportsViewState extends ConsumerState<ReportsView>
                       )
                     else
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text(
-                            'Warbixinada & Analytics',
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          Row(
-                            children: [
                               // Date range picker
                               OutlinedButton.icon(
                                 onPressed: _pickDateRange,
@@ -241,17 +234,10 @@ class _ReportsViewState extends ConsumerState<ReportsView>
                                 tooltip: 'Cusboonee',
                               ),
                             ],
-                          ),
-                        ],
                       ),
-                    const SizedBox(height: 20),
-                    // Tabs
-                    TabBar(
+                    const SizedBox(height: 12),
+                    ModernTabBar(
                       controller: _tabController,
-                      labelColor: AppColors.primary,
-                      unselectedLabelColor: AppColors.textLight,
-                      indicatorColor: AppColors.primary,
-                      isScrollable: isNarrow,
                       tabs: const [
                         Tab(text: 'Guudmar', icon: Icon(Icons.bar_chart_outlined, size: 18)),
                         Tab(text: 'Alaabta', icon: Icon(Icons.inventory_2_outlined, size: 18)),

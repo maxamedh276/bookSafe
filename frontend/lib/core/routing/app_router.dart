@@ -7,6 +7,7 @@ import '../../modules/inventory/views/inventory_view.dart';
 import '../../modules/customers/views/customers_view.dart';
 import '../../modules/customers/views/customer_detail_view.dart';
 import '../../modules/debts/views/debts_view.dart';
+import '../../modules/splash/views/splash_view.dart';
 import '../../modules/reports/views/reports_view.dart';
 import '../../modules/admin/views/tenants_list_view.dart';
 import '../../modules/admin/views/users_view.dart';
@@ -21,14 +22,21 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refreshListenable = ref.read(authRefreshListenableProvider);
 
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: '/splash',
     refreshListenable: refreshListenable,
     redirect: (context, state) {
       final authState = ref.read(authProvider);
       final isAuth = authState.isAuthenticated;
-      final isLoggingIn = state.matchedLocation == '/login' || state.matchedLocation == '/register';
+      final loc = state.matchedLocation;
+      final isSplash = loc == '/splash';
+      final isLoggingIn = loc == '/login' || loc == '/register';
 
-      if (!isAuth && !isLoggingIn) return '/login';
+      if (isSplash) {
+        if (isAuth) return '/';
+        return null;
+      }
+
+      if (!isAuth && !isLoggingIn) return '/splash';
       if (isAuth && isLoggingIn) return '/';
 
       // IT admin manages tenants via /admin, not /users
@@ -40,6 +48,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashView(),
+      ),
       // Auth Routes
       GoRoute(
         path: '/login',

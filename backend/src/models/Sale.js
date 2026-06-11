@@ -60,7 +60,7 @@ const Sale = sequelize.define('Sale', {
         allowNull: false,
     },
     total_quantity: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.DECIMAL(12, 3),
         defaultValue: 0,
     },
     sale_date: {

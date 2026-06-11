@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
+import 'modern_ui.dart';
 import '../../data/providers/auth_provider.dart';
 import '../services/offline_sync_service.dart';
 import '../i18n/app_strings.dart';
@@ -110,9 +111,10 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withValues(alpha: 0.95),
+        border: Border(bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.08))),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2)),
+          BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 2)),
         ],
       ),
       child: Row(
@@ -185,7 +187,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   // ─────────────────────────── DRAWER (mobile/tablet) ──────────────
   Widget _buildDrawer({required List<_NavItem> items, required AppStrings s, required String role}) {
     return Drawer(
-      backgroundColor: AppColors.secondary,
+      backgroundColor: const Color(0xFF0F172A),
       child: SafeArea(
         child: Column(
           children: [
@@ -221,7 +223,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
               onTap: () {
                 Navigator.pop(context);
                 ref.read(authProvider.notifier).logout();
-                context.go('/login');
+                context.go('/splash');
               },
             ),
             const SizedBox(height: 8),
@@ -238,8 +240,8 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       child: ListTile(
         dense: true,
         selected: isSelected,
-        selectedTileColor: AppColors.primary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        selectedTileColor: AppColors.primary.withValues(alpha: 0.9),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         leading: Icon(item.icon, color: isSelected ? Colors.white : Colors.white60, size: 22),
         title: Text(
           item.label,
@@ -268,7 +270,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     final w = shrink ? 68.0 : 250.0;
     return Container(
       width: w,
-      color: AppColors.secondary,
+      decoration: const BoxDecoration(gradient: AppDecor.sidebarGradient),
       child: Column(
         children: [
           // Logo
@@ -305,7 +307,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
               title: shrink ? null : Text(s.logout, style: const TextStyle(color: Colors.white60, fontSize: 13)),
               onTap: () {
                 ref.read(authProvider.notifier).logout();
-                context.go('/login');
+                context.go('/splash');
               },
             ),
           ),
@@ -327,12 +329,13 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
               context.go(item.route);
             },
             borderRadius: BorderRadius.circular(10),
-            child: Container(
-              height: 44,
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-              ),
+        child: Container(
+          height: 44,
+          decoration: BoxDecoration(
+            gradient: isSelected ? AppDecor.primaryGradient : null,
+            color: isSelected ? null : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
               child: Icon(item.icon, color: isSelected ? Colors.white : Colors.white60, size: 22),
             ),
           ),
@@ -344,8 +347,8 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       child: ListTile(
         dense: true,
         selected: isSelected,
-        selectedTileColor: AppColors.primary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        selectedTileColor: AppColors.primary.withValues(alpha: 0.9),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         leading: Icon(item.icon, color: isSelected ? Colors.white : Colors.white60, size: 20),
         title: Text(
           item.label,
@@ -370,8 +373,9 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
+          border: Border(top: BorderSide(color: Colors.grey.withValues(alpha: 0.1))),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -2)),
+            BoxShadow(color: AppColors.primary.withValues(alpha: 0.08), blurRadius: 16, offset: const Offset(0, -4)),
           ],
         ),
         child: Row(
@@ -391,10 +395,19 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        item.icon,
-                        color: isSelected ? AppColors.primary : Colors.grey,
-                        size: 22,
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: isSelected
+                            ? BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(10),
+                              )
+                            : null,
+                        child: Icon(
+                          item.icon,
+                          color: isSelected ? AppColors.primary : Colors.grey,
+                          size: 22,
+                        ),
                       ),
                       const SizedBox(height: 3),
                       Text(

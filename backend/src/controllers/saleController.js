@@ -4,6 +4,8 @@ const SaleItem = require('../models/SaleItem');
 const Product = require('../models/Product');
 const Customer = require('../models/Customer');
 
+const roundQty = (value) => Math.round(Number(value) * 1000) / 1000;
+
 // @desc    Create a new sale
 // @route   POST /api/sales
 // @access  Private
@@ -31,7 +33,7 @@ const createSale = async (req, res) => {
                 throw new Error(`Alaabta ID-geedu yahay ${item.product_id} lama helin ama ma taalo laantan.`);
             }
 
-            const qty = Number(item.quantity) || 0;
+            const qty = roundQty(item.quantity);
             const unitPrice = Number(item.price) || 0;
             if (qty <= 0) {
                 throw new Error(`Quantity khaldan ayaa la soo diray (product_id=${item.product_id}).`);
@@ -40,8 +42,9 @@ const createSale = async (req, res) => {
                 throw new Error(`Qiime khaldan ayaa la soo diray (product_id=${item.product_id}).`);
             }
 
-            if (product.stock < qty) {
-                throw new Error(`Alaabta ${product.name} stock-geedu kuma filna. (Hadda: ${product.stock})`);
+            const currentStock = roundQty(product.stock);
+            if (currentStock < qty) {
+                throw new Error(`Alaabta ${product.name} stock-geedu kuma filna. (Hadda: ${currentStock})`);
             }
             total_amount += qty * unitPrice;
         }
@@ -62,25 +65,26 @@ const createSale = async (req, res) => {
             debt_amount,
             discount: parsedDiscount,
             description: description || null,
-            total_quantity: items.reduce((acc, item) => acc + (Number(item.quantity) || 0), 0),
+            total_quantity: items.reduce((acc, item) => acc + roundQty(item.quantity), 0),
             payment_status,
             invoice_number,
         }, { transaction: t });
 
         // 3. Create Sale Items and Update Stock
         for (const item of items) {
+            const qty = roundQty(item.quantity);
+            const unitPrice = Number(item.price) || 0;
             await SaleItem.create({
                 sale_id: sale.id,
                 product_id: item.product_id,
-                quantity: item.quantity,
-                price: item.price,
-                subtotal: item.quantity * item.price,
+                quantity: qty,
+                price: unitPrice,
+                subtotal: Math.round(qty * unitPrice * 100) / 100,
             }, { transaction: t });
 
-            // Decrease stock and increment total_quantity
             const product = await Product.findByPk(item.product_id, { transaction: t });
-            product.stock -= item.quantity;
-            product.total_quantity = (product.total_quantity || 0) + item.quantity;
+            product.stock = roundQty(Number(product.stock) - qty);
+            product.total_quantity = roundQty(Number(product.total_quantity || 0) + qty);
             await product.save({ transaction: t });
         }
 
