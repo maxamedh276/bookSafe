@@ -14,6 +14,7 @@ import '../../../core/services/offline_sync_service.dart';
 import '../../../core/widgets/unit_dropdown.dart';
 import '../../../core/widgets/pos_quantity_sheet.dart';
 import '../../../core/widgets/quantity_select_field.dart';
+import '../../../core/widgets/pos_product_card.dart';
 import '../../../core/utils/unit_utils.dart';
 
 class SalesView extends ConsumerStatefulWidget {
@@ -252,15 +253,14 @@ class _SalesViewState extends ConsumerState<SalesView> {
                             },
                             child: GridView.builder(
                               physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.symmetric(horizontal: 24),
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: constraints.maxWidth > 1400 ? 4 : (constraints.maxWidth > 1100 ? 3 : 2),
-                                childAspectRatio: 0.8,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
-                              ),
+                              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                              gridDelegate: PosProductGrid.delegate(constraints.maxWidth),
                               itemCount: filtered.length,
-                              itemBuilder: (context, index) => _buildProductCard(filtered[index]),
+                              itemBuilder: (context, index) => PosProductCard(
+                                product: filtered[index],
+                                onTap: () => _addProductToCart(filtered[index]),
+                                onLongPress: () => _showProductQtySheet(filtered[index]),
+                              ),
                             ),
                           );
                         },
@@ -571,28 +571,16 @@ class _SalesViewState extends ConsumerState<SalesView> {
                                         );
                                       }
 
-                                      return ListView.separated(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                      final gridWidth = MediaQuery.sizeOf(context).width;
+
+                                      return GridView.builder(
+                                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                                        gridDelegate: PosProductGrid.delegate(gridWidth),
                                         itemCount: filtered.length,
-                                        separatorBuilder: (_, __) => const SizedBox(height: 8),
                                         itemBuilder: (context, index) {
                                           final product = filtered[index];
-                                          return ListTile(
-                                            tileColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(10),
-                                              side: BorderSide(
-                                                color: Colors.grey.withOpacity(0.1),
-                                              ),
-                                            ),
-                                            title: Text(product.name,
-                                                style: const TextStyle(fontWeight: FontWeight.w600)),
-                                            subtitle: Text(
-                                              '${formatPricePerUnit(product.price, product.unitName)}  •  Stock: ${formatStock(product.stock, product.unitName)}',
-                                              style: const TextStyle(fontSize: 12),
-                                            ),
-                                            trailing: const Icon(Icons.add_shopping_cart_outlined,
-                                                color: AppColors.primary),
+                                          return PosProductCard(
+                                            product: product,
                                             onTap: () => _addProductToCart(product),
                                             onLongPress: () => _showProductQtySheet(product),
                                           );
@@ -906,88 +894,6 @@ class _SalesViewState extends ConsumerState<SalesView> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildProductCard(Product product) {
-    return InkWell(
-      onTap: () => _addProductToCart(product),
-      onLongPress: () => _showProductQtySheet(product),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.grey.withOpacity(0.1)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Center(child: Icon(Icons.inventory_2_outlined, color: AppColors.primary, size: 30)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                product.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              if (product.hasUnit)
-                Text(
-                  formatUnitBadge(product.unitName, unitFullName: product.unitFullName),
-                  style: const TextStyle(fontSize: 10, color: AppColors.textLight),
-                )
-              else
-                const Text(
-                  'Unug lama doorin — ku dar Inventory',
-                  style: TextStyle(fontSize: 10, color: AppColors.warning),
-                ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text(
-                      formatPricePerUnit(product.price, product.unitName),
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.primary, 
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: product.stock < 5 ? AppColors.error.withOpacity(0.1) : AppColors.success.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      formatStock(product.stock, product.unitName),
-                      style: TextStyle(
-                        color: product.stock < 5 ? AppColors.error : AppColors.success, 
-                        fontSize: 9, 
-                        fontWeight: FontWeight.bold
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
